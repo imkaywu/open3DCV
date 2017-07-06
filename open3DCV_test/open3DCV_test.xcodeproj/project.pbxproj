@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C705A6CA1F0DFA7F002FCA6A /* camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C705A6C81F0DFA7F002FCA6A /* camera.cpp */; };
+		C705A6CC1F0DFA9A002FCA6A /* camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C705A6CB1F0DFA9A002FCA6A /* camera.cpp */; };
+		C705A6D01F0E0C9E002FCA6A /* numeric.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C705A6CE1F0E0C9E002FCA6A /* numeric.cpp */; };
+		C705A6D41F0E1288002FCA6A /* numeric_test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C705A6D31F0E1288002FCA6A /* numeric_test.cpp */; };
 		C73F96541F0C3E3F00401E74 /* image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C73F96521F0C3E3F00401E74 /* image.cpp */; };
 		C73F96591F0C428800401E74 /* image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C73F96581F0C428800401E74 /* image.cpp */; };
 		C73F965C1F0C55A300401E74 /* libjpeg.9.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C73F965B1F0C55A300401E74 /* libjpeg.9.dylib */; };
@@ -25,6 +29,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		C705A6C81F0DFA7F002FCA6A /* camera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = camera.cpp; path = ../src/camera/camera.cpp; sourceTree = "<group>"; };
+		C705A6C91F0DFA7F002FCA6A /* camera.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = camera.hpp; path = ../src/camera/camera.hpp; sourceTree = "<group>"; };
+		C705A6CB1F0DFA9A002FCA6A /* camera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = camera.cpp; path = ../../test/camera.cpp; sourceTree = "<group>"; };
+		C705A6CE1F0E0C9E002FCA6A /* numeric.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = numeric.cpp; path = ../src/math/numeric.cpp; sourceTree = "<group>"; };
+		C705A6CF1F0E0C9E002FCA6A /* numeric.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = numeric.h; path = ../src/math/numeric.h; sourceTree = "<group>"; };
+		C705A6D31F0E1288002FCA6A /* numeric_test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = numeric_test.cpp; path = ../../test/numeric_test.cpp; sourceTree = "<group>"; };
 		C73F96471F0C3DFC00401E74 /* open3DCV_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = open3DCV_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		C73F96521F0C3E3F00401E74 /* image.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = image.cpp; path = ../src/image/image.cpp; sourceTree = "<group>"; };
 		C73F96531F0C3E3F00401E74 /* image.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = image.hpp; path = ../src/image/image.hpp; sourceTree = "<group>"; };
@@ -44,9 +54,29 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		C705A6C71F0DFA6A002FCA6A /* camera */ = {
+			isa = PBXGroup;
+			children = (
+				C705A6C81F0DFA7F002FCA6A /* camera.cpp */,
+				C705A6C91F0DFA7F002FCA6A /* camera.hpp */,
+			);
+			name = camera;
+			sourceTree = "<group>";
+		};
+		C705A6CD1F0E0C8D002FCA6A /* math */ = {
+			isa = PBXGroup;
+			children = (
+				C705A6CE1F0E0C9E002FCA6A /* numeric.cpp */,
+				C705A6CF1F0E0C9E002FCA6A /* numeric.h */,
+			);
+			name = math;
+			sourceTree = "<group>";
+		};
 		C73F963E1F0C3DFC00401E74 = {
 			isa = PBXGroup;
 			children = (
+				C705A6CD1F0E0C8D002FCA6A /* math */,
+				C705A6C71F0DFA6A002FCA6A /* camera */,
 				C73F96551F0C424F00401E74 /* open3DCV_test */,
 				C73F96511F0C3E2800401E74 /* Image */,
 				C73F96481F0C3DFC00401E74 /* Products */,
@@ -75,6 +105,8 @@
 			isa = PBXGroup;
 			children = (
 				C73F96581F0C428800401E74 /* image.cpp */,
+				C705A6CB1F0DFA9A002FCA6A /* camera.cpp */,
+				C705A6D31F0E1288002FCA6A /* numeric_test.cpp */,
 			);
 			path = open3DCV_test;
 			sourceTree = "<group>";
@@ -144,7 +176,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C705A6D01F0E0C9E002FCA6A /* numeric.cpp in Sources */,
+				C705A6D41F0E1288002FCA6A /* numeric_test.cpp in Sources */,
+				C705A6CC1F0DFA9A002FCA6A /* camera.cpp in Sources */,
 				C73F96541F0C3E3F00401E74 /* image.cpp in Sources */,
+				C705A6CA1F0DFA7F002FCA6A /* camera.cpp in Sources */,
 				C73F96591F0C428800401E74 /* image.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -294,6 +330,7 @@
 				C73F96501F0C3DFC00401E74 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

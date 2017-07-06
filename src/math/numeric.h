@@ -1,5 +1,5 @@
-#ifndef OPENMVG_NUMERIC_NUMERIC_H
-#define OPENMVG_NUMERIC_NUMERIC_H
+#ifndef open3DCV_numeric_h
+#define open3DCV_numeric_h
 
 //--
 // Eigen
@@ -20,7 +20,7 @@
 #include <iostream>
 #include <vector>
 
-namespace openMVG
+namespace open3DCV
 {
 
 // Check MSVC
@@ -143,7 +143,47 @@ typedef Eigen::SparseMatrix<double, Eigen::RowMajor> sRMat;
 //--------------
 //-- Function --
 //--------------
+template<typename T>
+inline T sign_func(T x)
+{
+    if (x > 0)
+        return +1.0;
+    else if (x == 0)
+        return 0.0;
+    else
+        return -1.0;
+}
 
+/**
+ * @brief Compute R(diagonal), Q(orthogonal)
+ * @tparam T Type of the number to decompose
+ * @param M Input matrix
+ * @return void
+ * current implementation might be wrong
+ */
+template<typename T>
+inline int rq(T M, T& R, T& Q)
+{
+    Eigen::FullPivLU<T> lu_decomp(M);
+    if(lu_decomp.rank() != 3)
+    {
+        std::cerr << "Rank of M is not 3, cannot proceed to decompose" << std::endl;
+        return 1;
+    }
+    Eigen::HouseholderQR<T> qr(M.rowwise().reverse().transpose());
+    Q = qr.householderQ();
+    R = M * Q.inverse();
+    Eigen::FullPivLU<T> lu_decompR(R);
+    R = R.rowwise().reverse().transpose().eval();
+    Q = Q.transpose().eval();
+    
+    T W;
+//    W = R.unaryExpr(std::ptr_fun(sign_func));compute the sign
+    R = R * W;
+    Q = W * R;
+    
+    return 0;
+}
 
 /**
 * @brief Compute square of a number
@@ -617,7 +657,7 @@ void SplitRange( const T range_start , const T range_end , const int nb_split ,
 }
 
 
-} // namespace openMVG
+} // namespace open3DCV
 
 
 #endif  // OPENMVG_NUMERIC_NUMERIC_H

@@ -1,9 +1,9 @@
-#include "openMVG/numeric/numeric.h"
+#include "numeric.h"
 #include <iostream>
 #include <fstream>
 #include <string>
 
-namespace openMVG {
+namespace open3DCV {
 
 Mat3 CrossProductMatrix(const Vec3 &x) {
   Mat3 X;
