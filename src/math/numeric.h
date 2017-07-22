@@ -41,6 +41,66 @@ namespace open3DCV
   #endif
 #endif
 
+typedef Eigen::Vector2i Vec2i;
+typedef Eigen::Vector2f Vec2f;
+typedef Eigen::Vector3i Vec3i;
+typedef Eigen::Vector3f Vec3f;
+typedef Eigen::Vector3d Vec3;
+typedef Eigen::Vector4i Vec4i;
+
+#if defined(ENV32BIT)
+    typedef Eigen::Matrix<double, 2, 1, Eigen::DontAlign> Vec2;
+    typedef Eigen::Matrix<float, 4, 1, Eigen::DontAlign> Vec4f;
+    typedef Eigen::Matrix<double, 4, 1, Eigen::DontAlign> Vec4;
+    typedef Eigen::Matrix<double, 6, 1, Eigen::DontAlign> Vec6;
+#else
+    typedef Eigen::Vector2d Vec2;
+    typedef Eigen::Vector4f Vec4f;
+    typedef Eigen::Vector4d Vec4;
+    typedef Eigen::Vector6d Vec6;
+#endif
+
+typedef Eigen::Matrix2i Mat2i;
+typedef Eigen::Matrix3i Mat3i;
+typedef Eigen::Matrix3f Mat3f;
+typedef Eigen::Matrix3d Mat3;
+
+#if defined(ENV32BIT)
+    typedef Eigen::Matrix<float, 2, 2, Eigen::DontAlign> Mat2f;
+    typedef Eigen::Matrix<double, 2, 2, Eigen::DontAlign> Mat2;
+    typedef Eigen::Matrix<int, 4, 4, Eigen::DontAlign> Mat4i;
+    typedef Eigen::Matrix<float, 4, 4, Eigen::DontAlign> Mat4f;
+    typedef Eigen::Matrix<double, 4, 4, Eigen::DontAlign> Mat4;
+    typedef Eigen::Matrix<float, 3, 4, Eigen::DontAlign> Mat34f;
+    typedef Eigen::Matrix<double, 3, 4, Eigen::DontAlign> Mat34;
+#else
+    typedef Eigen::Matrix2f Mat2f;
+    typedef Eigen::Matrix2d Mat2;
+    typedef Eigen::Matrix4i Mat4i;
+    typedef Eigen::Matrix4f Mat4f;
+    typedef Eigen::Matrix4d Mat4;
+    typedef Eigen::Matrix<float, 3, 4> Mat34f;
+    typedef Eigen::Matrix<double, 3, 4> Mat34;
+#endif
+
+//-- General purpose Matrix and Vector
+typedef Eigen::Matrix<unsigned int, Eigen::Dynamic, 1> Vecu;
+typedef Eigen::VectorXi Veci;
+typedef Eigen::VectorXf Vecf;
+typedef Eigen::VectorXd Vec;
+typedef Eigen::Matrix<unsigned int, Eigen::Dynamic, Eigen::Dynamic> Matu;
+typedef Eigen::MatrixXi Mati;
+typedef Eigen::MatrixXf Matf;
+typedef Eigen::MatrixXd Mat;
+typedef Eigen::Matrix<double, 2, Eigen::Dynamic> Mat2X;
+typedef Eigen::Matrix<double, 3, Eigen::Dynamic> Mat3X;
+typedef Eigen::Matrix<double, 4, Eigen::Dynamic> Mat4X;
+typedef Eigen::Matrix<double, 9, Eigen::Dynamic> Mat9X;
+
+/// Quaternion type
+typedef Eigen::Quaternion<double> Quaternion;
+
+/*
 using Eigen::Map;
 
 /// Trait used for double type
@@ -139,6 +199,7 @@ typedef Eigen::SparseMatrix<double> sMat;
 
 /// Sparse unconstrained matrix using double internal format and Row Major storage
 typedef Eigen::SparseMatrix<double, Eigen::RowMajor> sRMat;
+*/
 
 //--------------
 //-- Function --
