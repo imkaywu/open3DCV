@@ -7,7 +7,7 @@
 //
 
 #include <stdio.h>
-#include "camera.hpp"
+#include "camera.h"
 
 using namespace std;
 using namespace open3DCV;

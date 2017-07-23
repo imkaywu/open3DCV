@@ -1,5 +1,5 @@
-#ifndef open3dcv_image_hpp
-#define open3dcv_image_hpp
+#ifndef open3dcv_image_h
+#define open3dcv_image_h
 
 #include <iostream>
 #include <vector>

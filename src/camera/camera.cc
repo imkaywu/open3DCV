@@ -6,7 +6,7 @@
 //  Copyright © 2016 KaiWu. All rights reserved.
 //
 
-#include "camera.hpp"
+#include "camera.h"
 #include "numeric.h"
 #include <fstream>
 #include <climits>
