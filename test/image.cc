@@ -24,17 +24,17 @@ int main(int argc, const char * argv[]) {
     // pbm test
     image.read(img_pbm);
     image.write("testpbm.pbm");
-    cout << "pbm: (" << image.width() << ", " << image.height() << ")" << endl;
+    cout << "pbm: (" << image.width() << ", " << image.height() << ", " << image.channel() << ")" << endl;
     
     // pgm test
     image.read(img_pgm);
     image.write("testpgm.pgm");
-    cout << "pgm: (" << image.width() << ", " << image.height() << ")" << endl;
+    cout << "pgm: (" << image.width() << ", " << image.height() << ", " << image.channel() << ")" << endl;
     
     // ppm test
     image.read(img_ppm);
     image.write("testppm.ppm");
-    cout << "ppm: (" << image.width() << ", " << image.height() << ")" << endl;
+    cout << "ppm: (" << image.width() << ", " << image.height() << ", " << image.channel() << ")" << endl;
     
     // jpg test
     image.read(img_jpg);

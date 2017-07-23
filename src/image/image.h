@@ -26,15 +26,15 @@ public:
     
     int read(const string r_name);
     int write(const string r_name);
-    static int read_any_image(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height);
+    static int read_any_image(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height, int& r_channel);
     static int read_pbm(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height);
     static int write_pbm(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height);
     static int read_pgm(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height);
     static int write_pgm(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height);
-    static int read_ppm(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height);
-    static int write_ppm(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height);
-    static int read_jpeg(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height);
-    static void write_jpeg(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height, const int flip = 0);
+    static int read_ppm(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height, int& r_channel);
+    static int write_ppm(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height, int& r_channel);
+    static int read_jpeg(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height, int& r_channel);
+    static void write_jpeg(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height, int& r_channel, const int flip = 0);
     
     void rgb2grey();
     int width() const;

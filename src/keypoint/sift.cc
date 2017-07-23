@@ -2,7 +2,7 @@
 
 namespace open3DCV {
     
-    int Sift::convert(Image &img, vl_sift_pix *fdata)
+    int Sift::convert(Image& img, vl_sift_pix* fdata)
     {
         const int w = img.width();
         const int h = img.height();
@@ -12,11 +12,15 @@ namespace open3DCV {
         fdata = (vl_sift_pix*)malloc(w * h * c * sizeof(vl_sift_pix));
         
         if (img.channel() != 1)
+        {
             for (int i = 0; i < img.width() * img.height(); ++i)
-                fdata[i] = img.m_gimage[i];
+                { fdata[i] = img.m_gimage[i]; }
+        }
         else
+        {
             for (int i = 0; i < img.width() * img.height(); ++i)
-                fdata[i] = img.m_image[i];
+                { fdata[i] = img.m_image[i]; }
+        }
         
         return 0;
     }

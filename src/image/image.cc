@@ -35,6 +35,7 @@ int Image::init(const string r_name)
         return 1;
     }
     name_ = r_name;
+    
     return 0;
 }
     
@@ -77,11 +78,12 @@ int Image::height() const { return height_; }
     
 int Image::channel() const { return channel_; }
     
+// rgb2gray: https://www.mathworks.com/help/matlab/ref/rgb2gray.html
 void Image::rgb2grey()
 {
     m_gimage.resize(width_ * height_);
     for (int i = 0; i < width_ * height_; ++i)
-        { m_gimage[i] = (char)(0.2126f * m_image[3 * i + 0] + 0.7512f * m_image[3 * i + 1] + 0.0722 * m_image[3 * i + 2]); }
+        { m_gimage[i] = (char)(0.2989f * m_image[3 * i + 0] + 0.5870f * m_image[3 * i + 1] + 0.114 * m_image[3 * i + 2]); }
 }
 
 int Image::read(const string r_name)
@@ -96,16 +98,18 @@ int Image::read(const string r_name)
     {
     case 0:
         read_pbm(r_name, m_image, width_, height_);
+        channel_ = 1;
         break;
     case 1:
         read_pgm(r_name, m_image, width_, height_);
+        channel_ = 1;
         break;
     case 2:
-        read_ppm(r_name, m_image, width_, height_);
+        read_ppm(r_name, m_image, width_, height_, channel_);
         break;
     case 3:
     case 4:
-        read_jpeg(r_name, m_image, width_, height_);
+        read_jpeg(r_name, m_image, width_, height_, channel_);
         break;
     case 5:
         break;
@@ -141,11 +145,11 @@ int Image::write(const string r_name)
             { write_pgm(r_name, m_gimage, width_, height_); }
         break;
     case 2:
-        write_ppm(r_name, m_image, width_, height_);
+        write_ppm(r_name, m_image, width_, height_, channel_);
         break;
     case 3:
     case 4:
-        write_jpeg(r_name, m_image, width_, height_);
+        write_jpeg(r_name, m_image, width_, height_, channel_);
         break;
     case 5:
         break;
@@ -160,7 +164,7 @@ int Image::write(const string r_name)
 //-----------------------------------------------
 // any image
 //-----------------------------------------------
-int Image::read_any_image(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height)
+int Image::read_any_image(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height, int& r_channel)
 {
     CImg<unsigned char> cimage;
     try
@@ -175,6 +179,7 @@ int Image::read_any_image(const string r_name, vector<unsigned char>& r_image, i
             }
             r_width = cimage.width();
             r_height = cimage.height();
+            r_channel = cimage.spectrum();
             r_image.resize(cimage.size());
             
             // CImg holds the image internally in a different order, so we need to reorder it here
@@ -183,7 +188,7 @@ int Image::read_any_image(const string r_name, vector<unsigned char>& r_image, i
             {
                 for (int x = 0; x < r_width; ++x)
                 {
-                    for (int c = 0; c < cimage.spectrum(); ++c)
+                    for (int c = 0; c < r_channel; ++c)
                     {
                         r_image[i] = cimage(x, y, 0, c);
                         i++;
@@ -206,7 +211,7 @@ int Image::read_any_image(const string r_name, vector<unsigned char>& r_image, i
 int Image::read_pbm(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height)
 {
     if (r_name.substr(r_name.length() - 3, r_name.length()) != "pbm")
-    { return 1; }
+        { return 1; }
     
     ifstream ifstr;
     ifstr.open(r_name.c_str());
@@ -305,7 +310,7 @@ int Image::write_pbm(const string r_name, vector<unsigned char>& r_image, int& r
 int Image::read_pgm(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height)
 {
     if (r_name.substr(r_name.length() - 3, r_name.length()) != "pgm")
-    { return 1; }
+        { return 1; }
     
     ifstream ifstr;
     ifstr.open(r_name.c_str());
@@ -383,10 +388,10 @@ int Image::write_pgm(const string r_name, vector<unsigned char>& r_image, int& r
 //----------------------------------------------------------------------
 // PPM
 //----------------------------------------------------------------------
-int Image::read_ppm(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height)
+int Image::read_ppm(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height, int& r_channel)
 {
     if (r_name.substr(r_name.length() - 3, r_name.length()) != "ppm")
-    { return 1; }
+        { return 1; }
     
     CImg<unsigned char> cimage;
     try
@@ -401,6 +406,7 @@ int Image::read_ppm(const string r_name, vector<unsigned char>& r_image, int& r_
             }
             r_width = cimage.width();
             r_height = cimage.height();
+            r_channel = cimage.spectrum();
             r_image.resize(cimage.size());
             
             int i = 0;
@@ -408,7 +414,7 @@ int Image::read_ppm(const string r_name, vector<unsigned char>& r_image, int& r_
             {
                 for (int x = 0; x < r_width; ++x)
                 {
-                    for (int c = 0; c < cimage.spectrum(); ++c)
+                    for (int c = 0; c < r_channel; ++c)
                     {
                         r_image[i] = cimage(x, y, 0, c);
                         ++i;
@@ -425,7 +431,7 @@ int Image::read_ppm(const string r_name, vector<unsigned char>& r_image, int& r_
     return 0;
 }
 
-int Image::write_ppm(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height)
+int Image::write_ppm(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height, int& r_channel)
 {
     ofstream ofstr;
     ofstr.open(r_name.c_str());
@@ -436,7 +442,7 @@ int Image::write_ppm(const string r_name, vector<unsigned char>& r_image, int& r
     }
     ofstr << "P6" << endl << r_width << ' ' << r_height << endl << 255 << endl;
     
-    for (int i = 0; i < 3 * r_width * r_height; ++i)
+    for (int i = 0; i < r_channel * r_width * r_height; ++i)
     {
         unsigned char uctmp = r_image[i];
         ofstr.write((char*)&uctmp, sizeof(unsigned char));
@@ -469,9 +475,11 @@ my_error_exit (j_common_ptr cinfo)
     longjmp(myerr->setjmp_buffer, 1);
 }
 
-int Image::read_jpeg(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height) {
-    if (r_name.substr(r_name.length() - 3, r_name.length()) != "jpg") {
-        cerr << r_name.substr(r_name.length() - 3, r_name.length()) << endl;
+int Image::read_jpeg(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height, int& r_channel) {
+    if (r_name.substr(r_name.length() - 3, r_name.length()) != "jpg" &&
+        r_name.substr(r_name.length() - 4, r_name.length()) != "jpeg")
+    {
+        cerr << r_name.substr(r_name.length() - 4, r_name.length()) << endl;
         return 1;
     }
     
@@ -489,13 +497,14 @@ int Image::read_jpeg(const string r_name, vector<unsigned char>& r_image, int& r
             }
             r_width = cimage.width();
             r_height = cimage.height();
+            r_channel = cimage.spectrum();
             r_image.resize(cimage.size());
             
             // CImg holds the image internally in a different order, so we need to reorder it here
             int i = 0;
             for(int y = 0; y < r_height; y++) {
                 for(int x = 0; x < r_width; x++) {
-                    for(int c = 0; c < cimage.spectrum(); c++) {
+                    for(int c = 0; c < r_channel; c++) {
                         r_image[i] = cimage(x, y, 0, c);
                         i++;
                     }
@@ -511,7 +520,7 @@ int Image::read_jpeg(const string r_name, vector<unsigned char>& r_image, int& r
     return 0;
 }
 
-void Image::write_jpeg(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height, const int flip) {
+void Image::write_jpeg(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height, int& r_channel, const int flip) {
     const int quality = 100;
     
     struct jpeg_compress_struct cinfo;
@@ -532,14 +541,14 @@ void Image::write_jpeg(const string r_name, vector<unsigned char>& r_image, int&
     
     cinfo.image_width = r_width;
     cinfo.image_height = r_height;
-    cinfo.input_components = 3;
+    cinfo.input_components = r_channel;
     cinfo.in_color_space = JCS_RGB;
     jpeg_set_defaults(&cinfo);
     jpeg_set_quality(&cinfo, quality, TRUE /* limit to baseline-JPEG values */);
     
     jpeg_start_compress(&cinfo, TRUE);
     
-    row_stride = r_width * 3;	/* JSAMPLEs per row in image_buffer */
+    row_stride = r_width * r_channel;	/* JSAMPLEs per row in image_buffer */
     
     while (cinfo.next_scanline < cinfo.image_height) {
         if (flip)
@@ -554,6 +563,8 @@ void Image::write_jpeg(const string r_name, vector<unsigned char>& r_image, int&
     jpeg_destroy_compress(&cinfo);
 }
 
+    
+// need to re-examing
 Vector3f Image::color(const int ix, const int iy) const {
 #ifdef PMMVPS_DEBUG
     if (alloc != 2)
@@ -562,7 +573,7 @@ Vector3f Image::color(const int ix, const int iy) const {
         exit (1);
     }
 #endif
-    const int index = (iy * width_ + ix) * 3;
+    const int index = (iy * width_ + ix) * channel_;
     
     return Vector3f(m_image[index],
                     m_image[index+1],

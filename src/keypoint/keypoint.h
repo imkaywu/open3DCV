@@ -15,8 +15,8 @@ namespace open3DCV {
     class Keypoint {
     public:
        
-        Keypoint(const Vec2 &x, unsigned int i);
-        Keypoint(const Vec2 &x, unsigned int i, const Vec3i &c);
+        Keypoint(const Vec2 &r_x, unsigned int r_i);
+        Keypoint(const Vec2 &r_x, unsigned int r_i, const Vec3i &r_c);
         
         //virtual ~Keypoint();
         
@@ -25,21 +25,21 @@ namespace open3DCV {
         const Vec3i &color() const;
 
     protected:
-        Vec2 p;     // Image coordinates
-        unsigned int i; // Image index
-        Vec3i c;     // Image color
+        Vec2 m_p;     // Image coordinates
+        unsigned int m_i; // Image index
+        Vec3i m_c;     // Image color
     };
 
     inline const Vec2 &Keypoint::coords() const {
-        return p;
+        return m_p;
     }
 
     inline unsigned int Keypoint::index() const {
-        return i;
+        return m_i;
     }
 
     inline const Vec3i &Keypoint::color() const {
-        return c;
+        return m_c;
     }
 }
 #endif // keypoint_h
