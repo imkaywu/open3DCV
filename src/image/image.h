@@ -3,7 +3,8 @@
 
 #include <iostream>
 #include <vector>
-#include "Eigen/Dense"
+#include <cmath>
+#include "numeric.h"
 
 using std::cerr;
 using std::endl;
@@ -41,13 +42,15 @@ public:
     int height() const;
     int channel() const;
     
+    //void combine_images(Image& img1, Image& img2);
+    void draw_line(Vec2i r_p1, Vec2i r_p2);
+    
     Vector3f color(const float fx, const float fy) const;
     Vector3f color(const int ix, const int iy) const;
     
     // try to make this private
     vector<unsigned char> m_image;
     vector<unsigned char> m_gimage;
-    
     
 private:
     // 0: nothing allocated, 1: width/height allocated, 2: memory allocated;

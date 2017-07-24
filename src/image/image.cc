@@ -86,6 +86,47 @@ void Image::rgb2grey()
         { m_gimage[i] = (char)(0.2989f * m_image[3 * i + 0] + 0.5870f * m_image[3 * i + 1] + 0.114 * m_image[3 * i + 2]); }
 }
 
+// r_p: (x, y)
+void Image::draw_line(Vec2i r_p1, Vec2i r_p2)
+{
+    int dx, dy, temp;
+    if (r_p1(0) == r_p2(0) && r_p1(1) == r_p2(1))
+        { return; }
+    
+    // more horizontal than vertical
+    if (abs(r_p1(1) - r_p2(1)) < abs(r_p1(0) - r_p2(0)))
+    {
+        // put points in increasing order by column (x)
+        if (r_p1(0) > r_p2(0))
+        {
+            temp = r_p1(0); r_p1(0) = r_p2(0); r_p2(0) = temp;
+            temp = r_p1(1); r_p1(1) = r_p2(1); r_p2(1) = temp;
+        }
+        dx = r_p2(0) - r_p1(0);
+        dy = r_p2(1) - r_p1(1);
+        for (int i = r_p1(0); i < r_p2(0); ++i)
+        {
+            int ind = width_ * (r_p1(1) + (i - r_p1(0)) * dy / dx) + i;
+            m_image[3 * ind + 0] = m_image[3 * ind + 1] = m_image[3 * ind + 2] = 255;
+        }
+    }
+    else
+    {
+        if (r_p1(1) > r_p2(1))
+        {
+            temp = r_p1(0); r_p1(0) = r_p2(0); r_p2(0) = temp;
+            temp = r_p1(1); r_p1(1) = r_p2(1); r_p2(1) = temp;
+        }
+        dx = r_p2(0) - r_p1(0);
+        dy = r_p2(1) - r_p1(1);
+        for (int i = r_p1(1); i < r_p2(1); ++i)
+        {
+            int ind = width_ * i + (r_p1(0) + (i - r_p1(1)) * dx / dy);
+            m_image[3 * ind + 0] = m_image[3 * ind + 1] = m_image[3 * ind + 2] = 255;
+        }
+    }
+}
+
 int Image::read(const string r_name)
 {
     string ext;

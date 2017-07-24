@@ -21,6 +21,7 @@ int main(int argc, const char * argv[]) {
     string img_jpg = "/Users/BlacKay/Documents/Projects/Images/test/1.jpg";
     string img_jpeg = "/Users/BlacKay/Documents/Projects/Images/test/1.jpeg";
     
+    /*
     // pbm test
     image.read(img_pbm);
     image.write("testpbm.pbm");
@@ -40,15 +41,22 @@ int main(int argc, const char * argv[]) {
     image.read(img_jpg);
     image.write("testjpg.jpg");
     cout << "jpg: (" << image.width() << ", " << image.height() << ", " << image.channel() << ")" << endl;
+    */
     
     // jpeg test
     image.read(img_jpeg);
     image.write("testjpeg.jpeg");
     cout << "jpeg: (" << image.width() << ", " << image.height() << ", " << image.channel() << ")" << endl;
     
+    image.draw_line(Vec2i(1, 1), Vec2i(image.width() - 10, image.height() - 10));
+    image.write("drawline.jpg");
+    cout << "draw line finished" << endl;
+    
+    /*
     // rgb2grey test
     image.rgb2grey();
     image.write("testrgb2grey.pgm");
+    */
     
     return 0;
 }
