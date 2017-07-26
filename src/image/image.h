@@ -44,6 +44,8 @@ public:
     
     //void combine_images(Image& img1, Image& img2);
     void draw_line(Vec2i r_p1, Vec2i r_p2);
+    void draw_plus(const Vec2i r_p, const int scale = 3);
+    void draw_cross(const Vec2i r_p, const int scale = 3);
     
     Vector3f color(const float fx, const float fy) const;
     Vector3f color(const int ix, const int iy) const;

@@ -48,9 +48,14 @@ int main(int argc, const char * argv[]) {
     image.write("testjpeg.jpeg");
     cout << "jpeg: (" << image.width() << ", " << image.height() << ", " << image.channel() << ")" << endl;
     
+    /*
     image.draw_line(Vec2i(1, 1), Vec2i(image.width() - 10, image.height() - 10));
     image.write("drawline.jpg");
     cout << "draw line finished" << endl;
+     */
+    image.draw_cross(Vec2i(40, 60));
+    image.write("drawcross.jpg");
+    cout << "draw dot finished" << endl;
     
     /*
     // rgb2grey test

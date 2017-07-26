@@ -126,6 +126,60 @@ void Image::draw_line(Vec2i r_p1, Vec2i r_p2)
         }
     }
 }
+    
+void Image::draw_plus(const Vec2i r_p, const int scale)
+{
+    int ind;
+    if (channel_ == 1)
+    {
+        for (int i = -scale; i <= scale; ++i)
+        {
+            ind = r_p(1) * width_ + r_p(0) + i;
+            m_image[ind] = 255;
+            
+            ind = (r_p(1) + i) * width_ + r_p(0);
+            m_image[ind] = 255;
+        }
+    }
+    else
+    {
+        for (int i = -scale; i <= scale; ++i)
+        {
+            ind = r_p(1) * width_ + r_p(0) + i;
+            m_image[3 * ind + 0] = m_image[3 * ind + 1] = m_image[3 * ind + 2] = 255;
+            
+            ind = (r_p(1) + i) * width_ + r_p(0);
+            m_image[3 * ind + 0] = m_image[3 * ind + 1] = m_image[3 * ind + 2] = 255;
+        }
+    }
+}
+    
+void Image::draw_cross(const Vec2i r_p, const int scale)
+{
+    int ind;
+    if (channel_ == 1)
+    {
+        for (int i = -scale; i <= scale; ++i)
+        {
+            ind = (r_p(1) + i) * width_ + r_p(0) + i;
+            m_image[ind] = 255;
+            
+            ind = (r_p(1) + i) * width_ + r_p(0) - i;
+            m_image[ind] = 255;
+        }
+    }
+    else
+    {
+        for (int i = -scale; i <= scale; ++i)
+        {
+            ind = (r_p(1) + i) * width_ + r_p(0) + i;
+            m_image[3 * ind + 0] = m_image[3 * ind + 1] = m_image[3 * ind + 2] = 255;
+            
+            ind = (r_p(1) + i) * width_ + r_p(0) - i;
+            m_image[3 * ind + 0] = m_image[3 * ind + 1] = m_image[3 * ind + 2] = 255;
+        }
+    }
+}
 
 int Image::read(const string r_name)
 {
