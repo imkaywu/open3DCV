@@ -1,10 +1,10 @@
-#ifndef sift_h
-#define sift_h
+#ifndef sift_h_
+#define sift_h_
 
 #include "vl/sift.h"
-#include "image.h"
-#include "numeric.h"
-#include "keypoint.h"
+#include "keypoint/keypoint.h"
+#include "keypoint/detector.h"
+#include "keypoint/descriptor.h"
 
 namespace open3DCV {
   
@@ -25,18 +25,23 @@ enum option {
 };
  */
 
-class Sift : public Keypoint {
+class Sift_Params {
+    
+};
+
+class Sift : public Detector, public Descriptor {
     
 public:
     
-    Sift(const Vec2 x, unsigned int i);
-    Sift(const Vec2 x, unsigned int i, const Vec3i c);
+    Sift();
     ~Sift();
     
     int convert(Image &img);
-    int detect();
-    int descript();
+    int detect_keypoints(const Image &image, vector<Keypoint> &keypoints, int verbose);
+    int extract_descript();
     void transpose_descriptor (vl_sift_pix* dst, vl_sift_pix* src);
+    static bool ksort(const Keypoint &a, const Keypoint &b);
+    vl_bool check_sorted(const vector<Keypoint> &keys, vl_size nkeys);
     
 private:
     vl_sift_pix* data_;
@@ -45,7 +50,7 @@ private:
     Mat descr_;
     
 }; // end of class Sift
-    
+
 } // end of namespace open3DCV
 
 #endif // sift_h

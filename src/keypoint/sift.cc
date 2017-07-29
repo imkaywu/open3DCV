@@ -3,6 +3,7 @@
 extern "C" {
 #include <math.h>
 }
+#include <algorithm>
 
 using std::cout;
 using std::endl;
@@ -52,9 +53,25 @@ namespace open3DCV {
         }
     }
     
-    int Sift::detect()
+    bool Sift::ksort(const Keypoint &a, const Keypoint &b)
     {
-        int verbose = 0;
+        return a.scale() < b.scale();
+    }
+    
+    vl_bool Sift::check_sorted(const vector<Keypoint> &keys, vl_size nkeys)
+    {
+        vl_uindex k;
+        for (k = 0; k + 1 < nkeys; ++k)
+        {
+            if (ksort(keys[k], keys[k + 1]))
+                return VL_FALSE;
+            k++;
+        }
+        return VL_TRUE;
+    }
+    
+    int Sift::detect_keypoints(const Image &image, vector<Keypoint> &keypoints, int verbose = 0)
+    {
         // sift setting
         int O = -1;
         int S = 3;
@@ -65,22 +82,27 @@ namespace open3DCV {
         double magnif = -1;
         double window_size = -1;
         
-        Mat4X ikeys_array;
-        double *ikeys = 0;
-        int nikeys = -1;
         vl_bool force_orientations = 0;
         vl_bool float_descriptors = 0;
         vl_bool compute_descriptors = 0;
         
+        vector<Keypoint> ikeys;
+        ikeys.assign(keypoints.begin(), keypoints.end());
+        int nikeys = static_cast<int>(ikeys.size());
+        if (nikeys != 0)
+        {
+            if (check_sorted(keypoints, nikeys))
+                std::sort(keypoints.begin(), keypoints.end(), ksort);
+        }
+        keypoints.clear();
+        
         /* -----------------------------------------------------------------
          *                                                            Do job
          * -------------------------------------------------------------- */
-        
+        {
         VlSiftFilt        *filt;
         vl_bool            first;
-        double            *frames = 0;
-        void              *descr  = 0;
-        int                nframes = 0, reserved = 0, i,j,q; // nframes: number of keypoints
+        int                nframe = 0, i, q; // nframes: number of features
         
         /* create a filter to process the image */
         filt = vl_sift_new (width_, height_, O, S, o_min);
@@ -90,33 +112,32 @@ namespace open3DCV {
         if (norm_thresh >= 0) vl_sift_set_norm_thresh (filt, norm_thresh);
         if (magnif      >= 0) vl_sift_set_magnif      (filt, magnif);
         if (window_size >= 0) vl_sift_set_window_size (filt, window_size);
-        /*
+        
         if (verbose) {
             cout << "vl_sift: filter settings:\n" << endl;
-            cout << "vl_sift:   octaves      (O)      = %d\n"
+            cout << "vl_sift:   octaves      (O)      = "
                  << vl_sift_get_noctaves(filt) << endl;
-            mexPrintf("vl_sift:   levels       (S)      = %d\n",
-                      vl_sift_get_nlevels       (filt));
-            mexPrintf("vl_sift:   first octave (o_min)  = %d\n",
-                      vl_sift_get_octave_first  (filt));
-            mexPrintf("vl_sift:   edge thresh           = %g\n",
-                      vl_sift_get_edge_thresh   (filt));
-            mexPrintf("vl_sift:   peak thresh           = %g\n",
-                      vl_sift_get_peak_thresh   (filt));
-            mexPrintf("vl_sift:   norm thresh           = %g\n",
-                      vl_sift_get_norm_thresh   (filt));
-            mexPrintf("vl_sift:   window size           = %g\n",
-                      vl_sift_get_window_size   (filt));
-            mexPrintf("vl_sift:   float descriptor      = %d\n",
-                      floatDescriptors);
+            cout << "vl_sift:   levels       (S)      = "
+                 << vl_sift_get_nlevels(filt) << endl;
+            cout << "vl_sift:   first octave (o_min)  = "
+                 << vl_sift_get_octave_first(filt) << endl;
+            cout << "vl_sift:   edge thresh           = "
+                 << vl_sift_get_edge_thresh(filt) << endl;
+            cout << "vl_sift:   peak thresh           = "
+                 << vl_sift_get_peak_thresh(filt) << endl;
+            cout << "vl_sift:   norm thresh           = "
+                 << vl_sift_get_norm_thresh(filt) << endl;
+            cout << "vl_sift:   window size           = "
+                 << vl_sift_get_window_size(filt) << endl;
+            cout << "vl_sift:   float descriptor      = "
+                 << float_descriptors << endl;
             
-            mexPrintf((nikeys >= 0) ?
-                      "vl_sift: will source frames? yes (%d read)\n" :
-                      "vl_sift: will source frames? no\n", nikeys);
-            mexPrintf("vl_sift: will force orientations? %s\n",
-                      force_orientations ? "yes" : "no");
+            printf((nikeys >= 0) ?
+                   "vl_sift: will source frames? yes (%d read)\n" :
+                   "vl_sift: will source frames? no\n", nikeys) ;
+            cout << "vl_sift: will force orientations? "
+                 << (force_orientations ? "yes" : "no") << endl;
         }
-        */
         
         /* ...............................................................
          *                                             Process each octave
@@ -173,11 +194,17 @@ namespace open3DCV {
                 VlSiftKeypoint const *k;
                 
                 /* Obtain keypoint orientations ........................... */
-                if (nikeys >= 0) {
+                if (nikeys < 0)
+                {
+                    k = keys + i;
+                    nangles = vl_sift_calc_keypoint_orientations(filt, angles, k);
+                }
+                else
+                {
                     vl_sift_keypoint_init (filt, &ik,
-                                           ikeys [4 * i + 1] - 1,
-                                           ikeys [4 * i + 0] - 1,
-                                           ikeys [4 * i + 2]);
+                                           ikeys[i].coords()(1) - 1,
+                                           ikeys[i].coords()(2) - 1,
+                                           ikeys[i].scale());
                     
                     if (ik.o != vl_sift_get_octave_index (filt)) {
                         break;
@@ -187,18 +214,16 @@ namespace open3DCV {
                     
                     /* optionally compute orientations too */
                     if (force_orientations) {
-                        nangles = vl_sift_calc_keypoint_orientations
-                        (filt, angles, k);
+                        nangles = vl_sift_calc_keypoint_orientations(filt, angles, k);
                     } else {
-                        angles [0] = M_PI / 2 - ikeys [4 * i + 3];
+                        angles [0] = M_PI / 2 - keypoints[i].orientation();
                         nangles    = 1;
                     }
-                } else {
-                    k = keys + i;
-                    nangles = vl_sift_calc_keypoint_orientations
-                    (filt, angles, k);
                 }
-                
+                // Q: how come multiple orientation?
+                // A: the gradient histogram is smoothed and the maximum is selected. In addition,
+                //    up to other three modes whose amplitude is within the 80% of the biggest mode
+                //    are retained and returned as additional orientations.
                 /* For each orientation ................................... */
                 for (q = 0; q < nangles; ++q) {
                     vl_sift_pix  buf [128];
@@ -206,125 +231,34 @@ namespace open3DCV {
                     
                     /* compute descriptor (if necessary) */
                     if (!compute_descriptors) {
-                        vl_sift_calc_keypoint_descriptor (filt, buf, k, angles [q]);
+                        vl_sift_calc_keypoint_descriptor(filt, buf, k, angles[q]);
                         transpose_descriptor (rbuf, buf);
                     }
                     
-                    /* make enough room for all these keypoints and more */
-                    if (reserved < nframes + 1) {
-                        reserved += 2 * nkeys;
-                        //frames = mxRealloc (frames, 4 * sizeof(double) * reserved);
-                        frames = new double[4 * reserved];
-                        if (!compute_descriptors) {
-                            if (! float_descriptors) {
-                                //descr  = mxRealloc (descr,  128 * sizeof(vl_uint8) * reserved);
-                                descr = new vl_uint8[128 * reserved];
-                            } else {
-                                //descr  = mxRealloc (descr,  128 * sizeof(float) * reserved);
-                                descr = new float[128 * reserved];
-                            }
-                        }
-                    }
+                    KeypointType type = SIFT;
+                    Keypoint keypoint(Vec2(k->x + 1, k->y + 1), type);
+                    keypoint.scale((float)k->sigma);
+                    keypoint.orientation(M_PI / 2 - angles [q]);
+                    keypoints.push_back(keypoint);
                     
-                    /* Save back with MATLAB conventions. Notice tha the input
-                     * image was the transpose of the actual image. */
-                    frames [4 * nframes + 0] = k -> y + 1;
-                    frames [4 * nframes + 1] = k -> x + 1;
-                    frames [4 * nframes + 2] = k -> sigma;
-                    frames [4 * nframes + 3] = M_PI / 2 - angles [q];
-                    
-                    if (!compute_descriptors) {
-                        if (! float_descriptors) {
-                            for (j = 0; j < 128; ++j) {
-                                float x = 512.0F * rbuf [j];
-                                x = (x < 255.0F) ? x : 255.0F;
-                                ((vl_uint8*)descr) [128 * nframes + j] = (vl_uint8) x;
-                            }
-                        } else {
-                            for (j = 0; j < 128; ++j) {
-                                float x = 512.0F * rbuf [j];
-                                ((float*)descr) [128 * nframes + j] = x;
-                            }
-                        }
-                    }
-                    
-                    ++nframes;
+                    ++nframe;
                 } /* next orientation */
             } /* next keypoint */
         } /* next octave */
         
         if (verbose)
-            { cout << "vl_sift: found %d keypoints\n" << nframes << endl; }
-        
-        /* ...............................................................
-         *                                                       Save back
-         * ............................................................ */
-        
-        {
-            keys_.resize(4, nframes);
-            descr_.resize(128, nframes);
-            for (int c = 0; c < nframes; ++c)
-            {
-                for (int r = 0; r < 4; ++r)
-                {
-                    keys_(r, c) = frames[4 * c + r];
-                }
-                if (!compute_descriptors)
-                {
-                    for (int r = 0; r < 128; ++r)
-                    {
-                        descr_(r, c) = ((float*)descr) [128 * c + r];
-                    }
-                }
-                
-            }
-            /*
-            int dims [2];
-            
-            // create an empty array
-            dims [0] = 0;
-            dims [1] = 0;
-            out[OUT_FRAMES] = mxCreateNumericArray
-            (2, dims, mxDOUBLE_CLASS, mxREAL);
-            
-            // set array content to be the frames buffer
-            dims [0] = 4;
-            dims [1] = nframes;
-            mxSetPr         (out[OUT_FRAMES], frames);
-            mxSetDimensions (out[OUT_FRAMES], dims, 2);
-            
-            if (!compute_descriptors) {
-                
-                // create an empty array
-                dims [0] = 0;
-                dims [1] = 0;
-                out[OUT_DESCRIPTORS]= mxCreateNumericArray
-                (2, dims,
-                 floatDescriptors ? mxSINGLE_CLASS : mxUINT8_CLASS,
-                 mxREAL);
-                
-                // set array content to be the descriptors buffer
-                dims [0] = 128;
-                dims [1] = nframes;
-                mxSetData       (out[OUT_DESCRIPTORS], descr);
-                mxSetDimensions (out[OUT_DESCRIPTORS], dims, 2);
-            }
-            */
-        }
+            { cout << "vl_sift: found " << keypoints.size() << " keypoints."  << endl; }
         
         /* cleanup */
         vl_sift_delete (filt);
-        /*
-        if (ikeys_array)
-            mxDestroyArray(ikeys_array);
-        */
-        ikeys_array.resize(0, 0);
-        /* end: do job */
+        ikeys.clear();
+        
+        }/* end: do job */
         
         return 0;
     }
     
-    int Sift::descript()
+    int Sift::extract_descript()
     {
         
         return 0;
