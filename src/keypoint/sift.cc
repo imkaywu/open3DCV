@@ -10,26 +10,30 @@ using std::endl;
 
 namespace open3DCV {
     
-    int Sift::convert(Image& img)
+    Sift::~Sift()
     {
-        const int width_ = img.width();
-        const int height_ = img.height();
-        const int channel_ = img.channel();
+        delete(data_);
+    }
+    
+    int Sift::convert(Image& image)
+    {
+        const int width_ = image.width();
+        const int height_ = image.height();
+        const int channel_ = image.channel();
         
         // the inner storage ORDER of VlPgmImage is exactly the same as that of our Image class
-        data_ = (vl_sift_pix*)malloc(width_ * height_ * channel_ * sizeof(vl_sift_pix));
+        data_ = (vl_sift_pix*)malloc(width_ * height_ * sizeof(vl_sift_pix));
         
         if (channel_ != 1)
         {
-            if (img.m_gimage.empty())
-                { img.rgb2grey(); }
+            image.rgb2grey();
             for (int i = 0; i < width_ * height_; ++i)
-                { data_[i] = img.m_gimage[i]; }
+                { data_[i] = (vl_sift_pix)image.m_gimage[i]; }
         }
         else
         {
             for (int i = 0; i < width_ * height_; ++i)
-                { data_[i] = img.m_image[i]; }
+                { data_[i] = (vl_sift_pix)image.m_image[i]; }
         }
         
         return 0;
@@ -70,19 +74,80 @@ namespace open3DCV {
         return VL_TRUE;
     }
     
-    int Sift::detect_keypoints(const Image &image, vector<Keypoint> &keypoints, int verbose = 0)
+    int Sift::detect_keypoints_simp(Image &image, vector<Keypoint> &keypoints, int verbose)
     {
+        // convert image
+        convert(image);
+        
         // sift setting
-        int O = -1;
+        int O = 3;
         int S = 3;
         int o_min = 0;
-        double edge_thresh = -1;
-        double peak_thresh = -1;
-        double norm_thresh = -1;
-        double magnif = -1;
-        double window_size = -1;
+        double edge_thresh = 10;
+        double peak_thresh = 0;
+        double norm_thresh = -INFINITY;
+        double magnif = 3;
+        double window_size = 2;
         
-        vl_bool force_orientations = 0;
+        VlSiftFilt* filt = 0;
+        
+        if (filt == nullptr || (filt->width != image.width() ||
+                                filt->height != image.height()))
+        {
+            vl_sift_delete(filt);
+            filt = vl_sift_new(image.width(), image.height(),
+                               O, S, o_min);
+            vl_sift_set_edge_thresh(filt, edge_thresh);
+            vl_sift_set_peak_thresh(filt, peak_thresh);
+        }
+        
+        int vl_status = vl_sift_process_first_octave(filt, data_);
+        
+        keypoints.reserve(2000);
+        
+        while (vl_status != VL_ERR_EOF)
+        {
+            vl_sift_detect(filt);
+            
+            const VlSiftKeypoint* vl_keypoints = vl_sift_get_keypoints(filt);
+            int nkeys = vl_sift_get_nkeypoints(filt);
+            
+            for (int i = 0; i < nkeys; ++i)
+            {
+                double angles[4];
+                int nangles = vl_sift_calc_keypoint_orientations(filt, angles, &vl_keypoints[i]);
+                
+                for (int j = 0; j < nangles; ++j)
+                {
+                    Keypoint keypoint(Vec2(vl_keypoints[i].x + 1, vl_keypoints[i].y + 1), type_);
+                    keypoint.scale(vl_keypoints[i].sigma);
+                    keypoint.orientation(angles[j]);
+                    keypoints.push_back(keypoint);
+                }
+            }
+            vl_status = vl_sift_process_next_octave(filt);
+        }
+        
+        return 0;
+    }
+    // still has some bugs
+    // check out the original source code in 'toolbox/sift/vl_sift'
+    int Sift::detect_keypoints(Image &image, vector<Keypoint> &keypoints, int verbose)
+    {
+        // convert image
+        convert(image);
+        
+        // sift setting
+        int O = 3;
+        int S = 3;
+        int o_min = 0;
+        double edge_thresh = 10;
+        double peak_thresh = 0;
+        double norm_thresh = -INFINITY;
+        double magnif = 3;
+        double window_size = 2;
+        
+        vl_bool force_orientations = 1;
         vl_bool float_descriptors = 0;
         vl_bool compute_descriptors = 0;
         
@@ -172,7 +237,7 @@ namespace open3DCV {
             }
             
             /* Run detector ............................................. */
-            if (nikeys < 0) {
+            if (nikeys <= 0) {
                 vl_sift_detect (filt);
                 
                 keys  = vl_sift_get_keypoints  (filt);
@@ -194,7 +259,7 @@ namespace open3DCV {
                 VlSiftKeypoint const *k;
                 
                 /* Obtain keypoint orientations ........................... */
-                if (nikeys < 0)
+                if (nikeys <= 0)
                 {
                     k = keys + i;
                     nangles = vl_sift_calc_keypoint_orientations(filt, angles, k);

@@ -8,10 +8,10 @@
 namespace open3DCV {
     class Descriptor {
     public:
-        Descriptor();
-        virtual ~Descriptor();
+        Descriptor() { };
+        ~Descriptor() { };
         
-        virtual int extract_descriptor(const Image& image, vector<Keypoint>& keypoints, Mat* descriptor);
+        int extract_descriptor(const Image& image, vector<Keypoint>& keypoints, Mat* descriptor);
     };
 } // namespace open3DCV
 

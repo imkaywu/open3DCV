@@ -40,8 +40,8 @@ namespace open3DCV {
 
     private:
         Vec2 coords_;                   // coordinates
-        unsigned int i_;                // Image index
-        Vec3i c_;                       // color
+        unsigned int index_;                // Image index
+        Vec3i color_;                       // color
         KeypointType keypoint_type_;
         double scale_;
         double orientation_;
@@ -57,19 +57,19 @@ namespace open3DCV {
     }
 
     inline const unsigned int Keypoint::index() const {
-        return i_;
+        return index_;
     }
     
     inline void Keypoint::index(const unsigned int r_i) {
-        i_ = r_i;
+        index_ = r_i;
     }
 
     inline const Vec3i& Keypoint::color() const {
-        return c_;
+        return color_;
     }
     
     inline void Keypoint::color(const Vec3i r_c) {
-        c_ = r_c;
+        color_ = r_c;
     }
     
     inline const double Keypoint::scale() const {

@@ -33,11 +33,12 @@ class Sift : public Detector, public Descriptor {
     
 public:
     
-    Sift();
+    Sift() { type_ = SIFT; };
     ~Sift();
     
-    int convert(Image &img);
-    int detect_keypoints(const Image &image, vector<Keypoint> &keypoints, int verbose);
+    int convert(Image &image);
+    int detect_keypoints_simp(Image &image, vector<Keypoint> &keypoint, int verbose = 0);
+    int detect_keypoints(Image &image, vector<Keypoint> &keypoints, int verbose = 0);
     int extract_descript();
     void transpose_descriptor (vl_sift_pix* dst, vl_sift_pix* src);
     static bool ksort(const Keypoint &a, const Keypoint &b);
@@ -46,8 +47,7 @@ public:
 private:
     vl_sift_pix* data_;
     int width_, height_, channel_;
-    Mat4X keys_;
-    Mat descr_;
+    KeypointType type_;
     
 }; // end of class Sift
 
