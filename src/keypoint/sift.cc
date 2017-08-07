@@ -10,9 +10,17 @@ using std::endl;
 
 namespace open3DCV {
     
-    Sift::~Sift()
+    Sift::Sift()
     {
-        delete(data_);
+        type_ = SIFT;
+    }
+    
+    Sift::Sift(Image& image)
+    {
+        // convert image
+        convert(image);
+        
+        type_ = SIFT;
     }
     
     int Sift::convert(Image& image)
@@ -22,6 +30,10 @@ namespace open3DCV {
         const int channel_ = image.channel();
         
         // the inner storage ORDER of VlPgmImage is exactly the same as that of our Image class
+        
+        // this line has not been tested yet. If successful, can replace most of the code below
+//        data_ = (vl_sift_pix*)image.m_image.data();
+        
         data_ = (vl_sift_pix*)malloc(width_ * height_ * sizeof(vl_sift_pix));
         
         if (channel_ != 1)
@@ -74,11 +86,8 @@ namespace open3DCV {
         return VL_TRUE;
     }
     
-    int Sift::detect_keypoints_simp(Image &image, vector<Keypoint> &keypoints, int verbose)
+    int Sift::detect_keypoints_simp(const Image& image, vector<Keypoint> &keypoints, int verbose)
     {
-        // convert image
-        convert(image);
-        
         // sift setting
         int O = 3;
         int S = 3;
@@ -130,12 +139,17 @@ namespace open3DCV {
         
         return 0;
     }
+    
+    int Sift::extract_descriptor(const Image& image, const Keypoint& keypoint, Vec& descriptor)
+    {
+        
+        return 0;
+    }
+    
     // still has some bugs
     // check out the original source code in 'toolbox/sift/vl_sift'
-    int Sift::detect_keypoints(Image &image, vector<Keypoint> &keypoints, int verbose)
+    int Sift::detect_keypoints(const Image &image, vector<Keypoint> &keypoints, int verbose)
     {
-        // convert image
-        convert(image);
         
         // sift setting
         int O = 3;
@@ -323,9 +337,4 @@ namespace open3DCV {
         return 0;
     }
     
-    int Sift::extract_descript()
-    {
-        
-        return 0;
-    }
 }

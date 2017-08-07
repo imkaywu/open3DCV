@@ -29,9 +29,10 @@ int main(int argc, const char * argv[]) {
     sift_detector.detect_keypoints_simp(image, keypoints);
     for (int i = 0; i < static_cast<int>(keypoints.size()); ++i)
     {
-        image.draw_cross(keypoints[i].coords());
+        image.draw_cross(keypoints[i].coords().cast<int>());
     }
-    image.write("testpbm.pbm");
+    image.write("sift_pbm.pbm");
+    keypoints.clear();
 
     // pgm test
     image.read(img_pgm);
@@ -40,7 +41,8 @@ int main(int argc, const char * argv[]) {
     {
         image.draw_cross(keypoints[i].coords().cast<int>());
     }
-    image.write("testpgm.pgm");
+    image.write("sift_pgm.pgm");
+    keypoints.clear();
 
     // ppm test
     image.read(img_ppm);
@@ -49,7 +51,8 @@ int main(int argc, const char * argv[]) {
     {
         image.draw_cross(keypoints[i].coords().cast<int>());
     }
-    image.write("testppm.ppm");
+    image.write("sift_ppm.ppm");
+    keypoints.clear();
 
     // jpg test
     image.read(img_jpg);
@@ -59,7 +62,8 @@ int main(int argc, const char * argv[]) {
         Vec2i coords(keypoints[i].coords().cast<int>());
         image.draw_cross(coords);
     }
-    image.write("testjpg.jpg");
+    image.write("sift_jpg.jpg");
+    keypoints.clear();
 
     return 0;
 }

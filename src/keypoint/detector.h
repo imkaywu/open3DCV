@@ -10,7 +10,7 @@ namespace open3DCV {
         Detector() { };
         virtual ~Detector() { };
         
-        virtual int detect_keypoints(const Image& image, vector<Keypoint>& keypoints, int verbose = 0) {return 0;};
+        virtual int detect_keypoints(const Image& image, vector<Keypoint>& keypoints, int verbose = 0) = 0;
     };
 } // namespace open3DCV
 
