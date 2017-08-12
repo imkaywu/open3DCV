@@ -45,7 +45,7 @@ public:
     float norm_thresh_ = -INFINITY; // re-initialize
     float magnif_ = 3; // re-initialize
     float window_size_ = 2; // re-initialize
-    bool root_sift_ = false;
+    bool root_sift_ = true;
     bool upright_sift_ = true;
 };
 
@@ -61,10 +61,10 @@ public:
     int convert(const Image &image);
     int detect_keypoints_simp(const Image& image, vector<Keypoint>& keypoint, int verbose = 0);
     int detect_keypoints(const Image& image, vector<Keypoint>& keypoints, int verbose);
-    int extract_descriptor(const Image& image, const Keypoint& keypoint, Vec& descriptor);
-    int extract_descriptors(const Image& image, vector<Keypoint>& keypoints, vector<Vec>& descriptors);
+    int extract_descriptor(const Image& image, const Keypoint& keypoint, Vecf& descriptor);
+    int extract_descriptors(const Image& image, vector<Keypoint>& keypoints, vector<Vecf>& descriptors);
     double get_valid_first_octave(const int first_octave, const int width, const int height);
-    void convert_root_sift(Vec& descriptor);
+    void convert_root_sift(Vecf& descriptor);
     void set_params(const Sift_Params& sift_params);
     void clear();
     // not used

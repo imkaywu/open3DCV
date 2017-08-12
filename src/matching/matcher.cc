@@ -4,17 +4,16 @@
 namespace open3DCV
 {
 
-int Matcher::match(const vector<Vec>& desc1, const vector<Vec>& desc2, vector<Match>& matches)
+int Matcher::match(const vector<Vecf>& desc1, const vector<Vecf>& desc2, vector<Match>& matches)
 {
-    float dist = 0, min_dist = 1e8, sec_min_dist = 1e8, rate = 0.6;
+    float dist = 0, min_dist = 1e8, sec_min_dist = 1e8, rate = 0.8;
     int ind_min_key = 0;
     
     for (int i = 0; i < desc1.size(); ++i)
     {
+        min_dist = sec_min_dist = 1e8;
         for (int j = 0; j < desc2.size(); ++j)
         {
-//            std::cout << desc1[i].transpose() << std::endl << desc2[i].transpose() << std::endl;
-//            std::cout << desc1[i].norm() << std::endl << desc2[i].norm() << std::endl;
             dist = l2_dist(desc1[i], desc2[j]);
             if (dist < min_dist)
             {
@@ -27,13 +26,13 @@ int Matcher::match(const vector<Vec>& desc1, const vector<Vec>& desc2, vector<Ma
                 sec_min_dist = dist;
             }
         }
-//        if (min_dist < rate * sec_min_dist)
-//        {
-//            Match m(i, ind_min_key, min_dist);
-//            matches.push_back(m);
-//        }
-        Match m(i, ind_min_key, min_dist);
-        matches.push_back(m);
+        if (min_dist < rate * sec_min_dist)
+        {
+            Match m(i, ind_min_key, min_dist);
+            matches.push_back(m);
+        }
+//        Match m(i, ind_min_key, min_dist);
+//        matches.push_back(m);
     }
     
     return 0;

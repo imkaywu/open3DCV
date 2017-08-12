@@ -16,7 +16,10 @@ namespace open3DCV {
         type_ = SIFT;
     }
     
-    Sift::Sift(const Sift_Params& sift_params) : sift_params_(sift_params) { }
+    Sift::Sift(const Sift_Params& sift_params) : sift_params_(sift_params)
+    {
+        // no-op
+    }
     
     Sift::Sift(Image& image)
     {
@@ -74,14 +77,6 @@ namespace open3DCV {
     
     int Sift::detect_keypoints_simp(const Image& image, vector<Keypoint> &keypoints, int verbose)
     {
-//        int O = 3;
-//        int S = 3;
-//        int o_min = 0;
-//        double edge_thresh = 10;
-//        double peak_thresh = 0;
-//        double norm_thresh = -INFINITY;
-//        double magnif = 3;
-//        double window_size = 2;
         
         if (sift_filter_ == nullptr || (sift_filter_->width != image.width() ||
                                         sift_filter_->height != image.height()))
@@ -128,9 +123,8 @@ namespace open3DCV {
         return 0;
     }
     
-    int Sift::extract_descriptor(const Image& image, const Keypoint& keypoint, Vec& descriptor)
+    int Sift::extract_descriptor(const Image& image, const Keypoint& keypoint, Vecf& descriptor)
     {
-        // check if keypoint has scale and orientation
         if (!keypoint.has_scale() || !keypoint.has_orientation())
         {
             cerr << "keypoint must have scale and orientation to compute SIFT descriptor." << endl;
@@ -165,7 +159,7 @@ namespace open3DCV {
         }
         
         descriptor.resize(128);
-        vl_sift_calc_keypoint_descriptor(sift_filter_, (vl_sift_pix*)descriptor.data(), &sift_keypoint, keypoint.orientation());
+        vl_sift_calc_keypoint_descriptor(sift_filter_, descriptor.data(), &sift_keypoint, keypoint.orientation());
         
         if(sift_params_.root_sift_)
         {
@@ -175,7 +169,7 @@ namespace open3DCV {
         return 0;
     }
     
-    int Sift::extract_descriptors(const Image& image, vector<Keypoint>& keypoints, vector<Vec>& descriptors)
+    int Sift::extract_descriptors(const Image& image, vector<Keypoint>& keypoints, vector<Vecf>& descriptors)
     {
         if (sift_filter_ == nullptr ||
             sift_filter_->width == image.width() ||
@@ -204,14 +198,14 @@ namespace open3DCV {
             { convert(image); }
         int vl_status = vl_sift_process_first_octave(sift_filter_, data_);
         
-        descriptors.resize(keypoints.size(), Vec(128));
+        descriptors.resize(keypoints.size(), Vecf(128));
         while (vl_status != VL_ERR_EOF)
         {
             for (int i = 0; i < sift_keypoints.size(); ++i)
             {
                 if (sift_keypoints[i].o != sift_filter_->o_cur)
                     { continue; }
-                vl_sift_calc_keypoint_descriptor(sift_filter_, (vl_sift_pix*)descriptors[i].data(), &sift_keypoints[i], keypoints[i].orientation());
+                vl_sift_calc_keypoint_descriptor(sift_filter_, descriptors[i].data(), &sift_keypoints[i], keypoints[i].orientation());
             }
             vl_status = vl_sift_process_next_octave(sift_filter_);
         }
@@ -243,7 +237,7 @@ namespace open3DCV {
     // convert to RootSIFT descriptor, which is proven to provide better matches
     // "Three things everyone should know to improve object retrieval" by
     // Arandjelovic and Zisserman.
-    void Sift::convert_root_sift(Vec &descriptor)
+    void Sift::convert_root_sift(Vecf &descriptor)
     {
         const double tol = 1e-8;
         const double l1_norm = descriptor.lpNorm<1>();

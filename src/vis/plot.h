@@ -143,6 +143,7 @@ inline void draw_matches(const Image& img0, const vector<Keypoint> keys0, const 
         Vec2i pos0, pos1;
         pos0 = keys0[matches[i].key_ind1_].coords().cast<int>();
         pos1 = keys1[matches[i].key_ind2_].coords().cast<int>();
+        pos1(0) += img0.width();
         draw_cross(img, pos0);
         draw_cross(img, pos1);
         draw_line(img, pos0, pos1);

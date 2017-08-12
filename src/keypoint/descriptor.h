@@ -11,19 +11,19 @@ namespace open3DCV {
         Descriptor() { };
         virtual ~Descriptor() { };
         
-        virtual int extract_descriptor(const Image& image, const Keypoint& keypoint, Vec& descriptor) = 0;
-        virtual int extract_descriptors(const Image& image, vector<Keypoint>& keypoints, vector<Vec>& descriptors);
+        virtual int extract_descriptor(const Image& image, const Keypoint& keypoint, Vecf& descriptor) = 0;
+        virtual int extract_descriptors(const Image& image, vector<Keypoint>& keypoints, vector<Vecf>& descriptors);
     };
     
     // If any descriptors could not be extracted at a given keypoint, that keypoint would be removed from the container
-    inline int Descriptor::extract_descriptors(const Image& image, vector<Keypoint>& keypoints, vector<Vec>& descriptors)
+    inline int Descriptor::extract_descriptors(const Image& image, vector<Keypoint>& keypoints, vector<Vecf>& descriptors)
     {
         descriptors.reserve(keypoints.size());
         
         auto keypoint_it = keypoints.begin();
         while (keypoint_it != keypoints.end())
         {
-            Vec descriptor;
+            Vecf descriptor;
             if (!extract_descriptor(image, *keypoint_it, descriptor))
             {
                 keypoint_it = keypoints.erase(keypoint_it);
