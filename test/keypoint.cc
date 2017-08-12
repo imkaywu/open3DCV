@@ -7,7 +7,8 @@
 //
 
 #include <stdio.h>
-#include "sift.h"
+#include "keypoint/sift.h"
+#include "vis/plot.h"
 
 using namespace std;
 using namespace open3DCV;
@@ -22,48 +23,29 @@ int main(int argc, const char * argv[]) {
     string img_jpeg = "/Users/BlacKay/Documents/Projects/Images/test/1.jpeg";
     
     vector<Keypoint> keypoints;
-    Sift sift_detector;
-    
-    // pbm test
-    image.read(img_pbm);
-    sift_detector.detect_keypoints_simp(image, keypoints);
-    for (int i = 0; i < static_cast<int>(keypoints.size()); ++i)
-    {
-        image.draw_cross(keypoints[i].coords().cast<int>());
-    }
-    image.write("sift_pbm.pbm");
-    keypoints.clear();
+    Sift_Params sift_params(3, 3, 0, 10, 0, -INFINITY, 3, 2);
+    Sift sift(sift_params);
 
     // pgm test
-    image.read(img_pgm);
-    sift_detector.detect_keypoints_simp(image, keypoints);
-    for (int i = 0; i < static_cast<int>(keypoints.size()); ++i)
-    {
-        image.draw_cross(keypoints[i].coords().cast<int>());
-    }
-    image.write("sift_pgm.pgm");
-    keypoints.clear();
+//    image.read(img_pgm);
+//    sift_detector.detect_keypoints_simp(image, keypoints);
+//    draw_cross(image, keypoints);
+//    keypoints.clear();
+//    sift.clear();
 
     // ppm test
     image.read(img_ppm);
-    sift_detector.detect_keypoints_simp(image, keypoints);
-    for (int i = 0; i < static_cast<int>(keypoints.size()); ++i)
-    {
-        image.draw_cross(keypoints[i].coords().cast<int>());
-    }
-    image.write("sift_ppm.ppm");
+    sift.detect_keypoints_simp(image, keypoints);
+    draw_cross(image, keypoints);
     keypoints.clear();
+    sift.clear();
 
     // jpg test
     image.read(img_jpg);
-    sift_detector.detect_keypoints_simp(image, keypoints);
-    for (int i = 0; i < static_cast<int>(keypoints.size()); ++i)
-    {
-        Vec2i coords(keypoints[i].coords().cast<int>());
-        image.draw_cross(coords);
-    }
-    image.write("sift_jpg.jpg");
+    sift.detect_keypoints_simp(image, keypoints);
+    draw_cross(image, keypoints);
     keypoints.clear();
+//    sift.clear();
 
     return 0;
 }

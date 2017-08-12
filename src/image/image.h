@@ -20,6 +20,8 @@ class Image
 public:
     Image();
     Image(const string r_name);
+    Image(const Image& r_img);
+    Image(const int h, const int w, const int c);
     virtual ~Image();
     int init(const string r_name);
     int check_format(const string r_fmt);
@@ -37,22 +39,19 @@ public:
     static int read_jpeg(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height, int& r_channel);
     static void write_jpeg(const string r_name, vector<unsigned char>& r_image, int& r_width, int& r_height, int& r_channel, const int flip = 0);
     
-    void rgb2grey();
+    void rgb2grey(const Image& img);
+    void combine_images(const Image& img1, const Image& img2);
+    inline int in_image(const int ind) { return ind < width_ * height_; }
     int width() const;
     int height() const;
     int channel() const;
-    
-    //void combine_images(Image& img1, Image& img2);
-    void draw_line(Vec2i r_p1, Vec2i r_p2);
-    void draw_plus(const Vec2i r_p, const int scale = 3);
-    void draw_cross(const Vec2i r_p, const int scale = 3);
     
     Vector3f color(const float fx, const float fy) const;
     Vector3f color(const int ix, const int iy) const;
     
     // try to make this private
     vector<unsigned char> m_image;
-    vector<unsigned char> m_gimage;
+//    vector<unsigned char> m_gimage; // remove this member
     
 private:
     // 0: nothing allocated, 1: width/height allocated, 2: memory allocated;

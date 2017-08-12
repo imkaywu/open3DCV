@@ -15,6 +15,7 @@ namespace open3DCV {
         virtual int extract_descriptors(const Image& image, vector<Keypoint>& keypoints, vector<Vec>& descriptors);
     };
     
+    // If any descriptors could not be extracted at a given keypoint, that keypoint would be removed from the container
     inline int Descriptor::extract_descriptors(const Image& image, vector<Keypoint>& keypoints, vector<Vec>& descriptors)
     {
         descriptors.reserve(keypoints.size());

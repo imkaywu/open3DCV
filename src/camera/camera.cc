@@ -12,11 +12,17 @@
 #include <climits>
 
 using namespace open3DCV;
+using std::vector;
+using std::string;
 using std::cerr;
 using std::endl;
 using std::ifstream;
 using std::ofstream;
 using Eigen::Matrix3f;
+using Eigen::Matrix3Xf;
+using Eigen::Matrix4f;
+using Eigen::Vector3f;
+using Eigen::Vector4f;
 
 Camera::Camera()
 {

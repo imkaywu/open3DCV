@@ -9,38 +9,59 @@ using std::cout;
 using std::endl;
 
 namespace open3DCV {
+    static const int kMaXScaledDim = 3600;
     
     Sift::Sift()
     {
         type_ = SIFT;
     }
     
+    Sift::Sift(const Sift_Params& sift_params) : sift_params_(sift_params) { }
+    
     Sift::Sift(Image& image)
     {
-        // convert image
-        convert(image);
-        
         type_ = SIFT;
+        convert(image);
     }
     
-    int Sift::convert(Image& image)
+    Sift::~Sift()
+    {
+        if (data_ != nullptr)
+            { delete [] data_; }
+        if(sift_filter_ != nullptr)
+            { vl_sift_delete(sift_filter_); }
+    }
+    
+    void Sift::clear()
+    {
+        if (data_ != nullptr)
+        {
+            delete [] data_;
+            data_ = nullptr;
+        }
+        
+        if (sift_filter_ != nullptr)
+        {
+            vl_sift_delete(sift_filter_);
+            sift_filter_ = nullptr;
+        }
+    }
+    
+    int Sift::convert(const Image& image)
     {
         const int width_ = image.width();
         const int height_ = image.height();
         const int channel_ = image.channel();
         
         // the inner storage ORDER of VlPgmImage is exactly the same as that of our Image class
-        
-        // this line has not been tested yet. If successful, can replace most of the code below
-//        data_ = (vl_sift_pix*)image.m_image.data();
-        
-        data_ = (vl_sift_pix*)malloc(width_ * height_ * sizeof(vl_sift_pix));
+        data_ = new vl_sift_pix[width_ * height_];
         
         if (channel_ != 1)
         {
-            image.rgb2grey();
+            Image gimage;
+            gimage.rgb2grey(image);
             for (int i = 0; i < width_ * height_; ++i)
-                { data_[i] = (vl_sift_pix)image.m_gimage[i]; }
+                { data_[i] = (vl_sift_pix)gimage.m_image[i]; }
         }
         else
         {
@@ -51,6 +72,189 @@ namespace open3DCV {
         return 0;
     }
     
+    int Sift::detect_keypoints_simp(const Image& image, vector<Keypoint> &keypoints, int verbose)
+    {
+//        int O = 3;
+//        int S = 3;
+//        int o_min = 0;
+//        double edge_thresh = 10;
+//        double peak_thresh = 0;
+//        double norm_thresh = -INFINITY;
+//        double magnif = 3;
+//        double window_size = 2;
+        
+        if (sift_filter_ == nullptr || (sift_filter_->width != image.width() ||
+                                        sift_filter_->height != image.height()))
+        {
+            vl_sift_delete(sift_filter_);
+            const int first_octave = get_valid_first_octave(sift_params_.first_octave_, image.width(), image.height());
+            sift_filter_ = vl_sift_new(image.width(), image.height(),
+                                       sift_params_.num_octaves_,
+                                       sift_params_.num_levels_, first_octave);
+            vl_sift_set_edge_thresh(sift_filter_, sift_params_.edge_thresh_);
+            vl_sift_set_peak_thresh(sift_filter_, sift_params_.peak_thresh_);
+        }
+        
+        if (data_ == nullptr)
+            { convert(image); }
+        
+        int vl_status = vl_sift_process_first_octave(sift_filter_, data_);
+        
+        keypoints.reserve(2000);
+        
+        while (vl_status != VL_ERR_EOF)
+        {
+            vl_sift_detect(sift_filter_);
+            
+            const VlSiftKeypoint* vl_keypoints = vl_sift_get_keypoints(sift_filter_);
+            int nkeys = vl_sift_get_nkeypoints(sift_filter_);
+            
+            for (int i = 0; i < nkeys; ++i)
+            {
+                double angles[4];
+                int nangles = vl_sift_calc_keypoint_orientations(sift_filter_, angles, &vl_keypoints[i]);
+                
+                for (int j = 0; j < nangles; ++j)
+                {
+                    Keypoint keypoint(Vec2(vl_keypoints[i].x + 1, vl_keypoints[i].y + 1), type_);
+                    keypoint.scale(vl_keypoints[i].sigma);
+                    keypoint.orientation(angles[j]);
+                    keypoints.push_back(keypoint);
+                }
+            }
+            vl_status = vl_sift_process_next_octave(sift_filter_);
+        }
+        
+        return 0;
+    }
+    
+    int Sift::extract_descriptor(const Image& image, const Keypoint& keypoint, Vec& descriptor)
+    {
+        // check if keypoint has scale and orientation
+        if (!keypoint.has_scale() || !keypoint.has_orientation())
+        {
+            cerr << "keypoint must have scale and orientation to compute SIFT descriptor." << endl;
+            return 1;
+        }
+        
+        if (sift_filter_ == nullptr ||
+            sift_filter_->width == image.width() ||
+            sift_filter_->height == image.height())
+        {
+            vl_sift_delete(sift_filter_);
+            const int first_octave = get_valid_first_octave(sift_params_.first_octave_, image.width(), image.height());
+            sift_filter_ = vl_sift_new(image.width(), image.height(),
+                                       sift_params_.num_octaves_,
+                                       sift_params_.num_levels_, first_octave);
+        }
+        // sift keypoint
+        VlSiftKeypoint sift_keypoint;
+        vl_sift_keypoint_init(sift_filter_, &sift_keypoint, keypoint.coords()(0) - 1, keypoint.coords()(1) - 1, keypoint.scale());
+        
+        // process the first octave
+        if (data_ == nullptr)
+            { convert(image); }
+        int vl_status = vl_sift_process_first_octave(sift_filter_, data_);
+        while (sift_keypoint.o != sift_filter_->o_cur)
+            { vl_status = vl_sift_process_next_octave(sift_filter_); }
+        
+        if (vl_status == VL_ERR_EOF)
+        {
+            cerr << "Cannot extract SIFT descriptor" << endl;
+            return 1;
+        }
+        
+        descriptor.resize(128);
+        vl_sift_calc_keypoint_descriptor(sift_filter_, (vl_sift_pix*)descriptor.data(), &sift_keypoint, keypoint.orientation());
+        
+        if(sift_params_.root_sift_)
+        {
+            convert_root_sift(descriptor);
+        }
+        
+        return 0;
+    }
+    
+    int Sift::extract_descriptors(const Image& image, vector<Keypoint>& keypoints, vector<Vec>& descriptors)
+    {
+        if (sift_filter_ == nullptr ||
+            sift_filter_->width == image.width() ||
+            sift_filter_->height == image.height())
+        {
+            vl_sift_delete(sift_filter_);
+            const int first_octave = get_valid_first_octave(sift_params_.first_octave_, image.width(), image.height());
+            sift_filter_ = vl_sift_new(image.width(), image.height(),
+                                       sift_params_.num_octaves_,
+                                       sift_params_.num_levels_, first_octave);
+        }
+        // sift keypoints
+        vector<VlSiftKeypoint> sift_keypoints(keypoints.size());
+        for (int i = 0; i < keypoints.size(); ++i)
+        {
+            if (!keypoints[i].has_scale() || !keypoints[i].has_orientation())
+            {
+                cerr << "keypoint must have scale and orientation to compute SIFT descriptor." << endl;
+                return 1;
+            }
+            vl_sift_keypoint_init(sift_filter_, &sift_keypoints[i], keypoints[i].coords()(0) - 1, keypoints[i].coords()(1) - 1, keypoints[i].scale());
+        }
+        
+        // process the first octave
+        if (data_ == nullptr)
+            { convert(image); }
+        int vl_status = vl_sift_process_first_octave(sift_filter_, data_);
+        
+        descriptors.resize(keypoints.size(), Vec(128));
+        while (vl_status != VL_ERR_EOF)
+        {
+            for (int i = 0; i < sift_keypoints.size(); ++i)
+            {
+                if (sift_keypoints[i].o != sift_filter_->o_cur)
+                    { continue; }
+                vl_sift_calc_keypoint_descriptor(sift_filter_, (vl_sift_pix*)descriptors[i].data(), &sift_keypoints[i], keypoints[i].orientation());
+            }
+            vl_status = vl_sift_process_next_octave(sift_filter_);
+        }
+        
+        if (sift_params_.root_sift_)
+        {
+            for (int i = 0; i < descriptors.size(); ++i)
+            {
+                convert_root_sift(descriptors[i]);
+            }
+        }
+        
+        return 0;
+    }
+    
+    double Sift::get_valid_first_octave(const int first_octave, const int width, const int height)
+    {
+        const int max_dim = std::max(width, height);
+        int valid_first_octave = first_octave;
+        double scale_factor = std::pow(2.0, -1 * valid_first_octave);
+        while (max_dim * scale_factor >= kMaXScaledDim)
+        {
+            scale_factor /= 2.0;
+            ++valid_first_octave;
+        }
+        return valid_first_octave;
+    }
+    
+    // convert to RootSIFT descriptor, which is proven to provide better matches
+    // "Three things everyone should know to improve object retrieval" by
+    // Arandjelovic and Zisserman.
+    void Sift::convert_root_sift(Vec &descriptor)
+    {
+        const double tol = 1e-8;
+        const double l1_norm = descriptor.lpNorm<1>();
+        if (l1_norm > tol)
+        {
+            descriptor /= l1_norm;
+            descriptor = descriptor.array().sqrt();
+        }
+    }
+    
+    // methods not used
     void Sift::transpose_descriptor(vl_sift_pix* dst, vl_sift_pix* src)
     {
         int const BO = 8;  /* number of orientation bins */
@@ -84,66 +288,6 @@ namespace open3DCV {
             k++;
         }
         return VL_TRUE;
-    }
-    
-    int Sift::detect_keypoints_simp(const Image& image, vector<Keypoint> &keypoints, int verbose)
-    {
-        // sift setting
-        int O = 3;
-        int S = 3;
-        int o_min = 0;
-        double edge_thresh = 10;
-        double peak_thresh = 0;
-        double norm_thresh = -INFINITY;
-        double magnif = 3;
-        double window_size = 2;
-        
-        VlSiftFilt* filt = 0;
-        
-        if (filt == nullptr || (filt->width != image.width() ||
-                                filt->height != image.height()))
-        {
-            vl_sift_delete(filt);
-            filt = vl_sift_new(image.width(), image.height(),
-                               O, S, o_min);
-            vl_sift_set_edge_thresh(filt, edge_thresh);
-            vl_sift_set_peak_thresh(filt, peak_thresh);
-        }
-        
-        int vl_status = vl_sift_process_first_octave(filt, data_);
-        
-        keypoints.reserve(2000);
-        
-        while (vl_status != VL_ERR_EOF)
-        {
-            vl_sift_detect(filt);
-            
-            const VlSiftKeypoint* vl_keypoints = vl_sift_get_keypoints(filt);
-            int nkeys = vl_sift_get_nkeypoints(filt);
-            
-            for (int i = 0; i < nkeys; ++i)
-            {
-                double angles[4];
-                int nangles = vl_sift_calc_keypoint_orientations(filt, angles, &vl_keypoints[i]);
-                
-                for (int j = 0; j < nangles; ++j)
-                {
-                    Keypoint keypoint(Vec2(vl_keypoints[i].x + 1, vl_keypoints[i].y + 1), type_);
-                    keypoint.scale(vl_keypoints[i].sigma);
-                    keypoint.orientation(angles[j]);
-                    keypoints.push_back(keypoint);
-                }
-            }
-            vl_status = vl_sift_process_next_octave(filt);
-        }
-        
-        return 0;
-    }
-    
-    int Sift::extract_descriptor(const Image& image, const Keypoint& keypoint, Vec& descriptor)
-    {
-        
-        return 0;
     }
     
     // still has some bugs

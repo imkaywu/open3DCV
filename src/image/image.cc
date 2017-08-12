@@ -22,6 +22,22 @@ namespace open3DCV {
 Image::Image() { }
 
 Image::Image(const string r_name) { init(r_name); }
+    
+Image::Image(const Image& img)
+{
+    m_image = img.m_image;
+    width_ = img.width();
+    height_ = img.height();
+    channel_ = img.channel();
+}
+// not tested
+Image::Image(const int h, const int w, const int c)
+{
+    width_ = w;
+    height_ = h;
+    channel_ = c;
+    m_image.resize(h * w * c);
+}
 
 Image::~Image() { }
 
@@ -69,7 +85,6 @@ void Image::free()
         { alloc_ = 0; }
     
     vector<unsigned char>().swap(m_image);
-    vector<unsigned char>().swap(m_gimage);
 }
 
 int Image::width() const { return width_; }
@@ -77,112 +92,66 @@ int Image::width() const { return width_; }
 int Image::height() const { return height_; }
     
 int Image::channel() const { return channel_; }
-    
-// rgb2gray: https://www.mathworks.com/help/matlab/ref/rgb2gray.html
-void Image::rgb2grey()
-{
-    m_gimage.resize(width_ * height_);
-    for (int i = 0; i < width_ * height_; ++i)
-        { m_gimage[i] = (char)(0.2989f * m_image[3 * i + 0] + 0.5870f * m_image[3 * i + 1] + 0.114 * m_image[3 * i + 2]); }
-}
 
-// r_p: (x, y)
-void Image::draw_line(Vec2i r_p1, Vec2i r_p2)
+// rgb2gray: https://www.mathworks.com/help/matlab/ref/rgb2gray.html
+void Image::rgb2grey(const Image& img)
 {
-    int dx, dy, temp;
-    if (r_p1(0) == r_p2(0) && r_p1(1) == r_p2(1))
-        { return; }
-    
-    // more horizontal than vertical
-    if (abs(r_p1(1) - r_p2(1)) < abs(r_p1(0) - r_p2(0)))
+    const size_t sz = img.width() * img.height();
+    m_image.resize(sz);
+    for (size_t i = 0; i < sz; ++i)
     {
-        // put points in increasing order by column (x)
-        if (r_p1(0) > r_p2(0))
-        {
-            temp = r_p1(0); r_p1(0) = r_p2(0); r_p2(0) = temp;
-            temp = r_p1(1); r_p1(1) = r_p2(1); r_p2(1) = temp;
-        }
-        dx = r_p2(0) - r_p1(0);
-        dy = r_p2(1) - r_p1(1);
-        for (int i = r_p1(0); i < r_p2(0); ++i)
-        {
-            int ind = width_ * (r_p1(1) + (i - r_p1(0)) * dy / dx) + i;
-            m_image[3 * ind + 0] = m_image[3 * ind + 1] = m_image[3 * ind + 2] = 255;
-        }
-    }
-    else
-    {
-        if (r_p1(1) > r_p2(1))
-        {
-            temp = r_p1(0); r_p1(0) = r_p2(0); r_p2(0) = temp;
-            temp = r_p1(1); r_p1(1) = r_p2(1); r_p2(1) = temp;
-        }
-        dx = r_p2(0) - r_p1(0);
-        dy = r_p2(1) - r_p1(1);
-        for (int i = r_p1(1); i < r_p2(1); ++i)
-        {
-            int ind = width_ * i + (r_p1(0) + (i - r_p1(1)) * dx / dy);
-            m_image[3 * ind + 0] = m_image[3 * ind + 1] = m_image[3 * ind + 2] = 255;
-        }
+        m_image[i] = (char)(0.2989f * img.m_image[3 * i + 0] + 0.5870f * img.m_image[3 * i + 1] + 0.114 * img.m_image[3 * i + 2]);
     }
 }
     
-void Image::draw_plus(const Vec2i r_p, const int scale)
+void Image::combine_images(const Image& img1, const Image& img2)
 {
-    int ind;
-    if (channel_ == 1)
+    if (img1.channel() != img2.channel())
     {
-        for (int i = -scale; i <= scale; ++i)
-        {
-            ind = r_p(1) * width_ + r_p(0) + i;
-            m_image[ind] = 255;
-            
-            ind = (r_p(1) + i) * width_ + r_p(0);
-            m_image[ind] = 255;
-        }
+        cerr << "Image should have the same number of channels." << endl;
     }
-    else
-    {
-        for (int i = -scale; i <= scale; ++i)
-        {
-            ind = r_p(1) * width_ + r_p(0) + i;
-            m_image[3 * ind + 0] = m_image[3 * ind + 1] = m_image[3 * ind + 2] = 255;
-            
-            ind = (r_p(1) + i) * width_ + r_p(0);
-            m_image[3 * ind + 0] = m_image[3 * ind + 1] = m_image[3 * ind + 2] = 255;
-        }
-    }
-}
+    int w = img1.width() + img2.width();
+    int h = std::max(img1.height(), img2.height());
+    int ch = img1.channel();
+    m_image.resize(w * h * ch);
+    alloc_ = 1;
+    width_ = w;
+    height_ = h;
+    channel_ = ch;
     
-void Image::draw_cross(const Vec2i r_p, const int scale)
-{
-    int ind;
-    if (channel_ == 1)
+    int ind0, ind1;
+    // write img1
+    for (int y = 0; y < img1.height(); ++y)
     {
-        for (int i = -scale; i <= scale; ++i)
+        for (int x = 0; x < img1.width(); ++x)
         {
-            ind = (r_p(1) + i) * width_ + r_p(0) + i;
-            m_image[ind] = 255;
-            
-            ind = (r_p(1) + i) * width_ + r_p(0) - i;
-            m_image[ind] = 255;
+            for (int c = 0; c < ch; ++c)
+            {
+                ind0 = ch * (y * img1.width() + x);
+                ind1 = ch * (y * w + x);
+                m_image[ind1] = img1.m_image[ind0];
+            }
         }
     }
-    else
+    
+    // write img2
+    for (int y = 0; y < img2.height(); ++y)
     {
-        for (int i = -scale; i <= scale; ++i)
+        for (int x = 0; x < img2.width(); ++x)
         {
-            ind = (r_p(1) + i) * width_ + r_p(0) + i;
-            m_image[3 * ind + 0] = m_image[3 * ind + 1] = m_image[3 * ind + 2] = 255;
-            
-            ind = (r_p(1) + i) * width_ + r_p(0) - i;
-            m_image[3 * ind + 0] = m_image[3 * ind + 1] = m_image[3 * ind + 2] = 255;
+            for (int c = 0; c < ch; ++c)
+            {
+                ind0 = ch * (y * img2.width() + x);
+                ind1 = ch * (y * w + x + img1.width());
+                m_image[ind1] = img2.m_image[ind0];
+            }
         }
     }
 }
 
 int Image::read(const string r_name)
 {
+    init(r_name);
     string ext;
     int pos = (int)r_name.find(".");
     if (pos != std::string::npos)
@@ -228,16 +197,10 @@ int Image::write(const string r_name)
     switch(fmt)
     {
     case 0:
-        if(m_gimage.empty())
-            { write_pbm(r_name, m_image, width_, height_); }
-        else
-            { write_pbm(r_name, m_gimage, width_, height_); }
+        write_pbm(r_name, m_image, width_, height_);
         break;
     case 1:
-        if(m_gimage.empty())
-            { write_pgm(r_name, m_image, width_, height_); }
-        else
-            { write_pgm(r_name, m_gimage, width_, height_); }
+        write_pgm(r_name, m_image, width_, height_);
         break;
     case 2:
         write_ppm(r_name, m_image, width_, height_, channel_);

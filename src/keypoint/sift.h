@@ -7,26 +7,46 @@
 #include "keypoint/descriptor.h"
 
 namespace open3DCV {
-  
-/*
-enum option {
-    opt_octaves = 0,
-    opt_levels,
-    opt_first_octave,
-    opt_frames,
-    opt_edge_thresh,
-    opt_peak_thresh,
-    opt_norm_thresh,
-    opt_magnif,
-    opt_window_size,
-    opt_orientations,
-    opt_float_descriptors,
-    opt_verbose
-};
- */
 
 class Sift_Params {
+public:
+    Sift_Params() {};
+    Sift_Params(int num_octaves,
+                int num_levels,
+                int first_octave,
+                float edge_thresh,
+                float peak_thresh,
+                float norm_thresh,
+                float magnif,
+                float window_size) :
+        num_octaves_(num_octaves), num_levels_(num_levels),
+        first_octave_(first_octave), edge_thresh_(edge_thresh),
+        peak_thresh_(peak_thresh), norm_thresh_(norm_thresh),
+        magnif_(magnif), window_size_(window_size){ };
     
+    Sift_Params(int num_octaves,
+                int num_levels,
+                int first_octave) :
+        num_octaves_(num_octaves), num_levels_(num_levels), first_octave_(first_octave) { };
+    
+    Sift_Params(const Sift_Params& sift_params) :
+        num_octaves_(sift_params.num_octaves_), num_levels_(sift_params.num_levels_),
+        first_octave_(sift_params.first_octave_), edge_thresh_(sift_params.edge_thresh_),
+        peak_thresh_(sift_params.peak_thresh_), norm_thresh_(sift_params.norm_thresh_),
+        magnif_(sift_params.magnif_), window_size_(sift_params.window_size_){ };
+    
+    ~Sift_Params() { };
+    
+    int num_octaves_ = 3;
+    int num_levels_ = 3;
+    int first_octave_ = 0;
+    float edge_thresh_ = 10.0f / 255.0;
+    float peak_thresh_ = 1.2f / 255.0;
+    float norm_thresh_ = -INFINITY; // re-initialize
+    float magnif_ = 3; // re-initialize
+    float window_size_ = 2; // re-initialize
+    bool root_sift_ = false;
+    bool upright_sift_ = true;
 };
 
 class Sift : public Detector, public Descriptor {
@@ -34,19 +54,28 @@ class Sift : public Detector, public Descriptor {
 public:
     
     Sift();
+    Sift(const Sift_Params& sift_params);
     Sift(Image& image);
-    ~Sift() { delete(data_); };
+    ~Sift();
     
-    int convert(Image &image);
+    int convert(const Image &image);
     int detect_keypoints_simp(const Image& image, vector<Keypoint>& keypoint, int verbose = 0);
     int detect_keypoints(const Image& image, vector<Keypoint>& keypoints, int verbose);
     int extract_descriptor(const Image& image, const Keypoint& keypoint, Vec& descriptor);
+    int extract_descriptors(const Image& image, vector<Keypoint>& keypoints, vector<Vec>& descriptors);
+    double get_valid_first_octave(const int first_octave, const int width, const int height);
+    void convert_root_sift(Vec& descriptor);
+    void set_params(const Sift_Params& sift_params);
+    void clear();
+    // not used
     void transpose_descriptor (vl_sift_pix* dst, vl_sift_pix* src);
     static bool ksort(const Keypoint& a, const Keypoint& b);
     vl_bool check_sorted(const vector<Keypoint> &keys, vl_size nkeys);
     
 private:
     vl_sift_pix* data_;
+    VlSiftFilt* sift_filter_;
+    Sift_Params sift_params_;
     int width_, height_, channel_;
     KeypointType type_;
     
