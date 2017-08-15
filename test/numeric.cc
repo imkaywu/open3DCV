@@ -12,10 +12,17 @@
 using namespace std;
 using namespace open3DCV;
 
-/*
-int main(int argc, const char * argv[]) {
-    
-    
-    return 0;
-}
- */
+//int main(int argc, const char * argv[]) {
+//    
+//    Vec3f a;
+//    a << 1, 2, 3;
+//    Vec3f b;
+//    b << 43, 143, 6;
+//    std::cout << a.transpose().array() * b.transpose().array() << std::endl;
+//    
+//    Mat3f c;
+//    c << a.transpose(), b.transpose(), a.transpose().array() * b.transpose().array();
+//    cout << c << endl;
+//    
+//    return 0;
+//}

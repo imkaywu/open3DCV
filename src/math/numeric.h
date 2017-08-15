@@ -47,6 +47,8 @@ typedef Eigen::Vector3i Vec3i;
 typedef Eigen::Vector3f Vec3f;
 typedef Eigen::Vector3d Vec3;
 typedef Eigen::Vector4i Vec4i;
+typedef Eigen::Matrix<float, 9, 1> Vec9f;
+typedef Eigen::Matrix<double, 9, 1> Vec9;
 
 #if defined(ENV32BIT)
     typedef Eigen::Matrix<double, 2, 1, Eigen::DontAlign> Vec2;
