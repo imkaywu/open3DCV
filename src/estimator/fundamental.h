@@ -1,9 +1,6 @@
 #ifndef fundamental_h_
 #define fundamental_h_
 
-#include "Eigen/SVD"
-#include "Eigen/LU"
-
 #include "math/numeric.h"
 #include "estimator/preprocess.h"
 #include "estimator/param_estimator.h"

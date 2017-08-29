@@ -56,7 +56,7 @@ inline void draw_plus(Image& img, const Vec2i r_p, const int scale = 3)
     int ind;
     if (img.channel() == 1)
     {
-        for (int i = -scale; i <= scale; ++i)
+        for (int i = 1-scale; i < scale; ++i)
         {
             ind = r_p(1) * img.width() + r_p(0) + i;
             img.m_image[ind] = 255;
@@ -67,7 +67,7 @@ inline void draw_plus(Image& img, const Vec2i r_p, const int scale = 3)
     }
     else
     {
-        for (int i = -scale; i <= scale; ++i)
+        for (int i = 1-scale; i < scale; ++i)
         {
             ind = r_p(1) * img.width() + r_p(0) + i;
             img.m_image[3 * ind + 0] = img.m_image[3 * ind + 1] = img.m_image[3 * ind + 2] = 255;
@@ -95,7 +95,7 @@ inline void draw_cross(Image& img, const Vec2i r_p, const int scale = 3)
     int ind;
     if (img.channel() == 1)
     {
-        for (int i = -scale; i <= scale; ++i)
+        for (int i = 1-scale; i < scale; ++i)
         {
             ind = (r_p(1) + i) * img.width() + r_p(0) + i;
             if (img.in_image(ind))
@@ -108,7 +108,7 @@ inline void draw_cross(Image& img, const Vec2i r_p, const int scale = 3)
     }
     else
     {
-        for (int i = -scale; i <= scale; ++i)
+        for (int i = 1-scale; i < scale; ++i)
         {
             ind = (r_p(1) + i) * img.width() + r_p(0) + i;
             if (img.in_image(ind))

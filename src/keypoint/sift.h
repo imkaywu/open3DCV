@@ -59,8 +59,8 @@ public:
     ~Sift();
     
     int convert(const Image &image);
-    int detect_keypoints_simp(const Image& image, vector<Keypoint>& keypoint, int verbose = 0);
-    int detect_keypoints(const Image& image, vector<Keypoint>& keypoints, int verbose);
+    int detect_keypoints(const Image& image, vector<Keypoint>& keypoint, int verbose = 0);
+    int detect_keypoints_unfinished(const Image& image, vector<Keypoint>& keypoints, int verbose);
     int extract_descriptor(const Image& image, const Keypoint& keypoint, Vecf& descriptor);
     int extract_descriptors(const Image& image, vector<Keypoint>& keypoints, vector<Vecf>& descriptors);
     double get_valid_first_octave(const int first_octave, const int width, const int height);

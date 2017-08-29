@@ -75,7 +75,7 @@ namespace open3DCV {
         return 0;
     }
     
-    int Sift::detect_keypoints_simp(const Image& image, vector<Keypoint> &keypoints, int verbose)
+    int Sift::detect_keypoints(const Image& image, vector<Keypoint> &keypoints, int verbose)
     {
         
         if (sift_filter_ == nullptr || (sift_filter_->width != image.width() ||
@@ -286,7 +286,7 @@ namespace open3DCV {
     
     // still has some bugs
     // check out the original source code in 'toolbox/sift/vl_sift'
-    int Sift::detect_keypoints(const Image &image, vector<Keypoint> &keypoints, int verbose)
+    int Sift::detect_keypoints_unfinished(const Image &image, vector<Keypoint> &keypoints, int verbose)
     {
         
         // sift setting
