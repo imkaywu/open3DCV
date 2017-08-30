@@ -67,18 +67,22 @@ inline Mat3f normalize_pts(const Mat2f& pts, Mat2f& newpts)
 }
    
 template<typename inT, typename outT>
-inline void vector2mat(const std::vector<inT>& idata, outT& odata)
+inline void vector2mat(const std::vector<inT>& idata, outT& odata, const int as_homog = 0)
 {
-    if(idata[0].rows() != odata.rows()) // check underlying type
-    {
-        std::cerr << "Inputs don't have consistent type or dimension!" << std::endl;
-        return;
-    }
+//    if(idata[0].rows() != odata.rows()) // check underlying type
+//    {
+//        std::cerr << "Inputs don't have consistent type or dimension!" << std::endl;
+//        return;
+//    }
+    
     odata.resize(idata[0].rows(), idata.size());
     for (int i = 0; i < idata.size(); ++i)
     {
         odata.col(i) = idata[i];
     }
+    
+    if (as_homog)
+    { odata.colwise().homogeneous(); }
 }
 
 template<typename inT, typename outT>
@@ -89,6 +93,7 @@ inline void mat2vector(const inT& idata, std::vector<outT>& odata)
         std::cerr << "Inputs don't have consistent type or dimension!" << std::endl;
         return;
     }
+    
     odata.resize(idata.cols());
     for (int i = 0; i < idata.cols(); ++i)
     {

@@ -3,24 +3,35 @@
 
 #include "keypoint/descriptor.h"
 #include "matching/matcher.h"
+#include "matching/distance.h"
 
 namespace open3DCV
 {
     
-    class Matcher_Brute_Force : Match
+    class Matcher_Brute_Force : public Matcher
     {
     public:
         Matcher_Brute_Force() { };
-        Matcher_Brute_Force(const Matcher_Param r_matcher_param) : matcher_param_(r_matcher_param) { }
+        Matcher_Brute_Force(Matcher_Param r_matcher_param);
         virtual ~Matcher_Brute_Force() { };
         
-        void init_param(Matcher_Param r_matcher_param) : matcher_params_(r_matcher_param) { };
+        void init_param(Matcher_Param r_matcher_param);
         int match(const vector<Vecf>& desc1, const vector<Vecf>& desc2, vector<Match>& matches);
     };
     
-    inline int Match_Brute_Force::match(const vector<Vecf>& desc1, const vector<Vecf>& desc2, vector<Match>& matches)
+    inline Matcher_Brute_Force::Matcher_Brute_Force (Matcher_Param r_matcher_param)
     {
-        float dist = 0, min_dist = 1e8, sec_min_dist = 1e8, rate = 0.8;
+        matcher_param_ = r_matcher_param;
+    }
+    
+    inline void Matcher_Brute_Force::init_param(Matcher_Param r_matcher_param)
+    {
+        matcher_param_ = r_matcher_param;
+    }
+    
+    inline int Matcher_Brute_Force::match(const vector<Vecf>& desc1, const vector<Vecf>& desc2, vector<Match>& matches)
+    {
+        float dist = 0, min_dist = 1e8, sec_min_dist = 1e8, ratio = matcher_param_.ratio;
         int ind_min_key = 0;
         
         for (int i = 0; i < desc1.size(); ++i)
@@ -40,13 +51,11 @@ namespace open3DCV
                     sec_min_dist = dist;
                 }
             }
-            if (min_dist < rate * sec_min_dist)
+            if (min_dist < ratio * sec_min_dist)
             {
                 Match m(i, ind_min_key, min_dist);
                 matches.push_back(m);
             }
-//        Match m(i, ind_min_key, min_dist);
-//        matches.push_back(m);
         }
         
         return 0;

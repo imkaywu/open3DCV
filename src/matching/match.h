@@ -7,11 +7,11 @@ class Match
 {
 public:
     Match () { };
-    Match (int r_ind1, int r_ind2, float dist) :
-        key_ind1_(r_ind1), key_ind2_(r_ind2), dist_(dist) { };
+    Match (int r_ikey1, int r_ikey2, float dist) :
+        ikey1_(r_ikey1), ikey2_(r_ikey2), dist_(dist) { };
     
-    int key_ind1_;
-    int key_ind2_;
+    int ikey1_;
+    int ikey2_;
     float dist_;
 };
     

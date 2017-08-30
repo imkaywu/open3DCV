@@ -5,13 +5,21 @@
 
 namespace open3DCV {
 
-Mat3 CrossProductMatrix(const Vec3 &x) {
-  Mat3 X;
-  X << 0, -x(2),  x(1),
-    x(2),     0, -x(0),
-   -x(1),  x(0),     0;
-  return X;
+Mat3f CrossProductMatrix(const Vec3f &x) {
+    Mat3f X;
+    X << 0, -x(2),  x(1),
+      x(2),     0, -x(0),
+     -x(1),  x(0),     0;
+    return X;
 }
+
+//Mat3 CrossProductMatrix(const Vec3 &x) {
+//  Mat3 X;
+//  X << 0, -x(2),  x(1),
+//    x(2),     0, -x(0),
+//   -x(1),  x(0),     0;
+//  return X;
+//}
 
 Mat3 RotationAroundX(double angle) {
   return Eigen::AngleAxisd(angle, Vec3::UnitX()).toRotationMatrix();

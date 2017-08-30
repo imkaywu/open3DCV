@@ -127,8 +127,8 @@ void Image::combine_images(const Image& img1, const Image& img2)
         {
             for (int c = 0; c < ch; ++c)
             {
-                ind0 = ch * (y * img1.width() + x);
-                ind1 = ch * (y * w + x);
+                ind0 = ch * (y * img1.width() + x) + c;
+                ind1 = ch * (y * w + x) + c;
                 m_image[ind1] = img1.m_image[ind0];
             }
         }
@@ -141,8 +141,8 @@ void Image::combine_images(const Image& img1, const Image& img2)
         {
             for (int c = 0; c < ch; ++c)
             {
-                ind0 = ch * (y * img2.width() + x);
-                ind1 = ch * (y * w + x + img1.width());
+                ind0 = ch * (y * img2.width() + x) + c;
+                ind1 = ch * (y * w + x + img1.width()) + c;
                 m_image[ind1] = img2.m_image[ind0];
             }
         }

@@ -75,6 +75,11 @@ namespace open3DCV {
         return 0;
     }
     
+    void Sift::set_params(const Sift_Params& r_params)
+    {
+        sift_params_ = r_params;
+    }
+    
     int Sift::detect_keypoints(const Image& image, vector<Keypoint> &keypoints, int verbose)
     {
         
@@ -111,7 +116,7 @@ namespace open3DCV {
                 
                 for (int j = 0; j < nangles; ++j)
                 {
-                    Keypoint keypoint(Vec2(vl_keypoints[i].x + 1, vl_keypoints[i].y + 1), type_);
+                    Keypoint keypoint(Vec2f(vl_keypoints[i].x + 1, vl_keypoints[i].y + 1), type_);
                     keypoint.scale(vl_keypoints[i].sigma);
                     keypoint.orientation(angles[j]);
                     keypoints.push_back(keypoint);
@@ -248,7 +253,7 @@ namespace open3DCV {
         }
     }
     
-    // methods not used
+    // ----------------------------------------------------- methods not used
     void Sift::transpose_descriptor(vl_sift_pix* dst, vl_sift_pix* src)
     {
         int const BO = 8;  /* number of orientation bins */
@@ -453,7 +458,7 @@ namespace open3DCV {
                     }
                     
                     KeypointType type = SIFT;
-                    Keypoint keypoint(Vec2(k->x + 1, k->y + 1), type);
+                    Keypoint keypoint(Vec2f(k->x + 1, k->y + 1), type);
                     keypoint.scale((float)k->sigma);
                     keypoint.orientation(M_PI / 2 - angles [q]);
                     keypoints.push_back(keypoint);

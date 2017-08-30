@@ -3,7 +3,8 @@
 #include "math/numeric.h"
 #include "keypoint/keypoint.h"
 #include "keypoint/sift.h"
-#include "matching/matcher.h"
+#include "matching/matcher_brute_force.h"
+#include "matching/matcher_flann.h"
 #include "estimator/fundamental.h"
 #include "estimator/param_estimator.h"
 #include "estimator/ransac.h"
@@ -37,7 +38,7 @@ void load_pts(const string fname, vector<Vec2f>& x1, vector<Vec2f>& x2)
 
 int main(int argc, const char* argv[])
 {
-    // test 1
+    // --------------------- test 1
 //    string fname = "/Users/BlacKay/Documents/Projects/open3DCV/test/fundamental/matches.txt";
 //    vector<Vec2f> x1, x2;
 //    load_pts(fname, x1, x2);
@@ -61,31 +62,55 @@ int main(int argc, const char* argv[])
 //         params[6], params[7], params[8];
 //    std::cout << F << std::endl;
     
-    // test 2
-    string iname1 = "/Users/BlacKay/Documents/Projects/Images/test/Episcopal Gaudi/1.jpg";
-    string iname2 = "/Users/BlacKay/Documents/Projects/Images/test/Episcopal Gaudi/2.jpg";
+    // --------------------- test 2 & 3
+    string iname1 = "/Users/BlacKay/Documents/Projects/Images/test/Notre Dame/1.jpg";
+    string iname2 = "/Users/BlacKay/Documents/Projects/Images/test/Notre Dame/2.jpg";
     Image image1(iname1), image2(iname2);
     image1.read(iname1);
     image2.read(iname2);
     
-    Sift_Params sift_params(3, 3, 0, 10, 0, -INFINITY, 3, 2);
-    Sift sift(sift_params);
     vector<Keypoint> keys1, keys2;
     vector<Vecf> desc1, desc2;
     
-    sift.detect_keypoints(image1, keys1, 0);
-    sift.extract_descriptors(image1, keys1, desc1);
-    draw_cross(image1, keys1);
-    sift.clear();
-    sift.detect_keypoints(image2, keys2, 0);
-    sift.extract_descriptors(image2, keys2, desc2);
-    draw_cross(image2, keys2);
-    sift.clear();
+    // --------------------- test 2
+//    Sift_Params sift_params(3, 3, 0, 10.0f, 7.0f, -INFINITY, 3, 2);
+//    Sift sift(sift_params);
+//    
+//    sift.detect_keypoints(image1, keys1, 0);
+//    draw_cross(image1, keys1, "sift_1");
+//    sift.extract_descriptors(image1, keys1, desc1);
+//    Detector::write_keypoints(keys1, "key1.txt");
+//    Descriptor::write_descriptors(desc1, "desc1.txt");
+//    sift.clear();
+//    
+//    sift_params.peak_thresh_ = 7.0f;
+//    sift.set_params(sift_params);
+//    
+//    sift.detect_keypoints(image2, keys2, 0);
+//    draw_cross(image2, keys2, "sift_2");
+//    sift.extract_descriptors(image2, keys2, desc2);
+//    Detector::write_keypoints(keys1, "key2.txt");
+//    Descriptor::write_descriptors(desc1, "desc2.txt");
+//    sift.clear();
+//    
+//    vector<Match> matches;
+//    Matcher_Param matcher_param(0.6, 128, 3, 10);
+//    
+//    Matcher_Brute_Force matcher(matcher_param);
+//    //Matcher_Flann matcher(matcher_param);
+//    matcher.match(desc1, desc2, matches);
+//    draw_matches(image1, keys1, image2, keys2, matches, "matching");
+//    Matcher::write_matches(matches, "matches.txt");
     
+    // --------------------- test 3
+    
+    Detector::read_keypoints(keys1, "key1.txt");
+    Detector::read_keypoints(keys2, "key2.txt");
+//    Descriptor::read_descriptors(desc1, "desc1.txt");
+//    Descriptor::read_descriptors(desc2, "desc2.txt");
     vector<Match> matches;
-    Matcher matcher;
-    matcher.match(desc1, desc2, matches);
-    draw_matches(image1, keys1, image2, keys2, matches);
+    Matcher::read_matches(matches, "matches.txt");
+    
     
     
     return 0;

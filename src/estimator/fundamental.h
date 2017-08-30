@@ -25,7 +25,7 @@ public:
     
 private:
     
-    void fund_seven_pts (const std::vector<Vec2f>& x1, const std::vector<Vec2f>& x2, Mat3f& F);
+    void fund_seven_pts (const std::vector<Vec2f>& x1, const std::vector<Vec2f>& x2, vector<Mat3f>& F);
     
     void fund_eight_pts(const std::vector<Vec2f>& x1, const std::vector<Vec2f>& x2, Mat3f& F);
     

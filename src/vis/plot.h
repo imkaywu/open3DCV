@@ -78,16 +78,16 @@ inline void draw_plus(Image& img, const Vec2i r_p, const int scale = 3)
     }
 }
     
-inline void draw_plus(Image img, const vector<Keypoint>& keys, const int scale = 3)
+inline void draw_plus(Image img, const vector<Keypoint>& keys, const string oname, const int scale = 3)
 {
     for (int i = 0; i < keys.size(); ++i)
     {
         draw_plus(img, keys[i].coords().cast<int>());
     }
     if (img.channel() == 1)
-        img.write("sift.pgm");
+        img.write(oname + ".pgm");
     else
-        img.write("sift.jpg");
+        img.write(oname + ".jpg");
 }
 
 inline void draw_cross(Image& img, const Vec2i r_p, const int scale = 3)
@@ -121,19 +121,19 @@ inline void draw_cross(Image& img, const Vec2i r_p, const int scale = 3)
     }
 }
 
-inline void draw_cross(Image img, const vector<Keypoint>& keys, const int scale = 3)
+inline void draw_cross(Image img, const vector<Keypoint>& keys, const string oname, const int scale = 3)
 {
     for (int i = 0; i < keys.size(); ++i)
     {
         draw_cross(img, keys[i].coords().cast<int>());
     }
     if (img.channel() == 1)
-        img.write("sift.pgm");
+        img.write(oname + ".pgm");
     else
-        img.write("sift.jpg");
+        img.write(oname + ".jpg");
 }
 
-inline void draw_matches(const Image& img0, const vector<Keypoint> keys0, const Image& img1, const vector<Keypoint> keys1, vector<Match>& matches)
+inline void draw_matches(const Image& img0, const vector<Keypoint> keys0, const Image& img1, const vector<Keypoint> keys1, vector<Match>& matches, const string oname)
 {
     Image img;
     img.combine_images(img0, img1);
@@ -141,8 +141,8 @@ inline void draw_matches(const Image& img0, const vector<Keypoint> keys0, const 
     for (int i = 0; i < matches.size(); ++i)
     {
         Vec2i pos0, pos1;
-        pos0 = keys0[matches[i].key_ind1_].coords().cast<int>();
-        pos1 = keys1[matches[i].key_ind2_].coords().cast<int>();
+        pos0 = keys0[matches[i].ikey1_].coords().cast<int>();
+        pos1 = keys1[matches[i].ikey2_].coords().cast<int>();
         pos1(0) += img0.width();
         draw_cross(img, pos0);
         draw_cross(img, pos1);
@@ -150,9 +150,9 @@ inline void draw_matches(const Image& img0, const vector<Keypoint> keys0, const 
     }
     
     if (img.channel() == 1)
-        img.write("sift.pgm");
+        img.write(oname + ".pgm");
     else
-        img.write("sift.jpg");
+        img.write(oname + ".jpg");
 }
 
 }

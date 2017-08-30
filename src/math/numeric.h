@@ -293,7 +293,8 @@ inline T clamp( const T & val, const T& min, const T & max )
 * @param x Input vector
 * @return Cross product matrix of a input vector
 */
-Mat3 CrossProductMatrix( const Vec3 &x );
+Mat3f CrossProductMatrix( const Vec3f &x );
+//Mat3 CrossProductMatrix( const Vec3 &x );
 
 
 /**
