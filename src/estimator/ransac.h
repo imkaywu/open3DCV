@@ -6,7 +6,8 @@
 
 namespace open3DCV
 {
-    
+   
+// T: type for data; S: type for parameter
 template<class T, class S>
 class Ransac
 {

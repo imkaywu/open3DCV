@@ -9,6 +9,10 @@ using Eigen::JacobiSVD;
 
 namespace open3DCV
 {
+Fundamental_Estimator::Fundamental_Estimator() : Param_Estimator<pair<Vec2f, Vec2f>, float>(8), error_thresh_(0.1)
+{
+    // no-opt
+}
 
 Fundamental_Estimator::Fundamental_Estimator(const float thresh) : Param_Estimator<pair<Vec2f, Vec2f>, float>(8), error_thresh_(thresh)
 {
@@ -61,9 +65,9 @@ void Fundamental_Estimator::fund_seven_pts (const std::vector<Vec2f>& x1, const 
         return;
     }
     
-    Matf matx1, matx2;
-    vector2mat<Vec2f, Matf>(x1, matx1);
-    vector2mat<Vec2f, Matf>(x2, matx2);
+    Mat2Xf matx1, matx2;
+    vector2mat<Vec2f, Mat2Xf>(x1, matx1);
+    vector2mat<Vec2f, Mat2Xf>(x2, matx2);
 
     // construct the A matrix in Af = 0
     Matf A(9, 7);
@@ -77,6 +81,7 @@ void Fundamental_Estimator::fund_seven_pts (const std::vector<Vec2f>& x1, const 
     matx1.row(1).array(),
     Matf::Ones(1, 7);
     A = A.transpose().eval(); // transposeInPlace();
+//    std::cout << "A: " << std::endl << A << std::endl;
     
     // solving for nullspace of A to get two F
     JacobiSVD<Eigen::Matrix<float, Eigen::Dynamic, 9> > amatrix_svd(A, Eigen::ComputeFullV);
@@ -84,13 +89,15 @@ void Fundamental_Estimator::fund_seven_pts (const std::vector<Vec2f>& x1, const 
     Vec9f fvec2 = amatrix_svd.matrixV().col(8);
     
     vector<Mat3f> Fmat(2);
-    Fmat[0] << fvec1(0), fvec1(1), fvec1(2),
-    fvec1(3), fvec1(4), fvec1(5),
-    fvec1(6), fvec1(7), fvec1(8);
+    Fmat[0] << fvec1(0), fvec1(3), fvec1(6),
+               fvec1(1), fvec1(4), fvec1(7),
+               fvec1(2), fvec1(5), fvec1(8);
     
-    Fmat[1] << fvec2(0), fvec2(1), fvec2(2),
-    fvec2(3), fvec2(4), fvec2(5),
-    fvec2(6), fvec2(7), fvec2(8);
+    Fmat[1] << fvec2(0), fvec2(3), fvec2(6),
+               fvec2(1), fvec2(4), fvec2(7),
+               fvec2(2), fvec2(5), fvec2(8);
+//    std::cout << "F1: " << std::endl << Fmat[0] << std::endl;
+//    std::cout << "F2: " << std::endl << Fmat[1] << std::endl;
     
     // find F that meets the singularity constraint: det(a * F1 + (1 - a) * F2) = 0
     float D[2][2][2];
@@ -114,6 +121,7 @@ void Fundamental_Estimator::fund_seven_pts (const std::vector<Vec2f>& x1, const 
     
     Vec roots;
     rpoly_plus_plus::FindPolynomialRootsJenkinsTraub(coefficients, &roots, NULL);
+//    std::cout << "roots: " << std::endl << roots << std::endl;
     
     // check sign consistency
     for (int i = 0; i < roots.size(); ++i)
@@ -121,8 +129,9 @@ void Fundamental_Estimator::fund_seven_pts (const std::vector<Vec2f>& x1, const 
         Mat3f Ftmp = (float)roots(i) * Fmat[0] + (1 - (float)roots(i)) * Fmat[1];
         JacobiSVD<Mat3f> fmatrix_svd(Ftmp.transpose(), Eigen::ComputeFullV);
         Vec3f e1 = fmatrix_svd.matrixV().col(2);
-        Vec3f l1 = CrossProductMatrix(e1) * matx1;
-        Vecf s = ((Ftmp * matx2).array() * l1.array()).colwise().sum();
+        Mat3Xf l1_ex = CrossProductMatrix(e1) * matx1.colwise().homogeneous(); // lines connecting of x1 and e1
+        Mat3Xf l1_Fx = Ftmp * matx2.colwise().homogeneous(); // lines determined by F and x2
+        Vecf s = (l1_Fx.array() * l1_ex.array()).colwise().sum();
         if ((s.array() > 0).all() || (s.array() < 0).all())
         { F.push_back(Ftmp); }
     }

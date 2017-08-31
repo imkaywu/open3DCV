@@ -14,6 +14,7 @@ class Fundamental_Estimator : public Param_Estimator<std::pair<Vec2f, Vec2f>, fl
 {
 public:
     
+    Fundamental_Estimator();
     Fundamental_Estimator(const float thresh);
     
     void estimate(std::vector<std::pair<Vec2f, Vec2f> >& data, std::vector<float>& params);
@@ -22,10 +23,11 @@ public:
     
     int check_inliers(std::vector<float>& params, std::pair<Vec2f, Vec2f>& data);
 
+    void fund_seven_pts (const std::vector<Vec2f>& x1, const std::vector<Vec2f>& x2, vector<Mat3f>& F);
     
 private:
     
-    void fund_seven_pts (const std::vector<Vec2f>& x1, const std::vector<Vec2f>& x2, vector<Mat3f>& F);
+//    void fund_seven_pts (const std::vector<Vec2f>& x1, const std::vector<Vec2f>& x2, vector<Mat3f>& F);
     
     void fund_eight_pts(const std::vector<Vec2f>& x1, const std::vector<Vec2f>& x2, Mat3f& F);
     

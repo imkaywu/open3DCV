@@ -13,8 +13,7 @@ using Eigen::SelfAdjointEigenSolver;
 
 #include "triangulation.h"
 
-namespace SfMLibrary {
-  namespace Triangulation {
+namespace open3DCV {
 
     Triangulation::Triangulation() {
       //no-op
@@ -142,5 +141,4 @@ namespace SfMLibrary {
 
       return g;
     }
-  }
 }
