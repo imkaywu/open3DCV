@@ -10,9 +10,11 @@ using open3DCV::Structure_Point;
 
 namespace open3DCV {
     
-    bool triangulate_dlt(const vector<Camera>& cameras, const Track& track, Structure_Point& struct_pts);
+    bool triangulate_linear(const vector<Camera>& cameras, const Track& track, Structure_Point& struct_pts); // DLT
     
     bool triangulate_midpoint(const vector<Camera>& cameras, const Track& track, Structure_Point& struct_pts);
+    
+    bool triangulate_nonlinear(const vector<Camera>& cameras, const Track& track, Structure_Point& struct_pts);
     
     bool triangulate_angular(const vector<Camera>& cameras, const Track& track, Structure_Point& struct_pts);
     

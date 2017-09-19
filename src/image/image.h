@@ -45,13 +45,16 @@ public:
     int width() const;
     int height() const;
     int channel() const;
+    string name() const;
     
     Vector3f color(const float fx, const float fy) const;
     Vector3f color(const int ix, const int iy) const;
     
+    unsigned char& operator[](int ind);
+    unsigned char operator[](int ind) const;
+    
     // try to make this private
     vector<unsigned char> m_image;
-//    vector<unsigned char> m_gimage; // remove this member
     
 private:
     // 0: nothing allocated, 1: width/height allocated, 2: memory allocated;
@@ -62,6 +65,26 @@ private:
     int channel_;
 };
     
+inline unsigned char& Image::operator[](int ind)
+{
+    if (ind > 0 && ind < width_ * height_ * channel_)
+        return m_image[ind];
+    
+    return m_image[0];
+}
+
+inline unsigned char Image::operator[](int ind) const
+{
+    if (ind > 0 && ind < width_ * height_ * channel_)
+        return m_image[ind];
+
+    return m_image[0];
+}
+    
+inline string Image::name() const
+{
+    return name_;
+}
 } // end of namespace open3DCV
 
 #endif // end of image_hpp

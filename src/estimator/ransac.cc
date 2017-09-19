@@ -15,28 +15,28 @@ float Ransac<T, S>::estimate(Param_Estimator<T, S>* param_estimator,
                              float prob_wo_outliers)
 {
     unsigned int ndata = static_cast<unsigned int>(data.size());
-    unsigned int ndata_est = param_estimator->num_data();
+    unsigned int ndata_min = param_estimator->ndata();
     
-    if (ndata < ndata_est || prob_wo_outliers <= 0.0f || prob_wo_outliers >= 1.0f)
+    if (ndata < ndata_min || prob_wo_outliers <= 0.0f || prob_wo_outliers >= 1.0f)
         { return 0; }
     
     vector<T> exact_est_data;
     vector<T> ls_est_data;
     vector<S> exact_est_params;
     
-    int i, j, k, l, nvotes_best, nvotes_cur, max_ind;
+    int i, j, k, l, nvotes_best = 0, nvotes_cur = 0, max_ind = INT_MAX;
     unsigned int niters;
     int* vote_best = new int[ndata]; // 1 if data[i] agrees with the best model
     int* vote_cur = new int[ndata]; // 1 if data[i] agrees with the current model
     int* not_chosen = new int[ndata]; // 1 if NOT chosen
     
-    Subset_Ind_Cmp subset_ind_cmp(ndata_est);
-    std::set<int*, Subset_Ind_Cmp> chosen_subset(subset_ind_cmp);
+    Subset_Ind_Cmp subset_ind_cmp(ndata_min);
+    std::set<int*, Subset_Ind_Cmp> subset_ind(subset_ind_cmp);
     int* subset_ind_cur;
     float numerator = log(1.0 - prob_wo_outliers);
     float denominator;
     
-    unsigned int max_niters = choose(ndata, ndata_est);
+    unsigned int max_niters = 10000; // choose(ndata, ndata_min); // way too slow
     
     params.clear();
     srand((unsigned)time(NULL));
@@ -48,16 +48,16 @@ float Ransac<T, S>::estimate(Param_Estimator<T, S>* param_estimator,
     {
         // randomly select data for exact model fit
         std::fill(not_chosen, not_chosen + ndata, 1);
-        subset_ind_cur = new int[ndata_est];
+        subset_ind_cur = new int[ndata_min];
         
         exact_est_data.clear();
         
         max_ind = ndata - 1;
-        for (l = 0; l < ndata_est; ++l)
+        for (l = 0; l < ndata_min; ++l)
         {
             // selected_ind is in [0, max_ind]
             int selected_ind = (int)(((float)rand()/(float)RAND_MAX) * max_ind + 0.5);
-            for (j = -1, k = 0; k < ndata && j < selected_ind; ++k)
+            for (j = -1, k = 0; j < selected_ind && k < ndata; ++k)
             {
                 if (not_chosen[k])
                     { ++j; }
@@ -68,6 +68,7 @@ float Ransac<T, S>::estimate(Param_Estimator<T, S>* param_estimator,
             --max_ind;
         }
         // get the indexes of the chosen data so we can check that this subset hasn't been chosen before
+        // can we combine the code below with the ones above?
         for (l = 0, j = 0; j < ndata; ++j)
         {
             if (!not_chosen[j])
@@ -78,7 +79,7 @@ float Ransac<T, S>::estimate(Param_Estimator<T, S>* param_estimator,
         }
         
         // Because elements in a set are unique, the insertion operation checks whether each inserted element is equivalent to an element already in the container, and if so, the element is not inserted, returning an iterator to this existing element (if the function returns a value).
-        std::pair<typename std::set<int *, Subset_Ind_Cmp>::iterator, bool> res = chosen_subset.insert(subset_ind_cur);
+        std::pair<typename std::set<int *, Subset_Ind_Cmp>::iterator, bool> res = subset_ind.insert(subset_ind_cur);
         
         // first time we select this subset
         if (res.second == true)
@@ -88,29 +89,41 @@ float Ransac<T, S>::estimate(Param_Estimator<T, S>* param_estimator,
             if(exact_est_params.size() == 0)
                 continue;
             
-            nvotes_cur = 0;
-            std::fill(vote_cur, vote_cur + ndata, 0);
+            const int nparam = param_estimator->nparam();
+            int nresults = static_cast<int>(exact_est_params.size()) / nparam; // should be a integer
             
-            for (j = 0; j < ndata && nvotes_best - nvotes_cur < ndata - j + 1; ++j)
+            for (int iresult = 0; iresult < nresults; ++iresult)
             {
-                if (param_estimator->check_inliers(exact_est_params, data[j]))
-                {
-                    vote_cur[j] = 1;
-                    ++nvotes_cur;
-                }
-            }
-            if(nvotes_cur > nvotes_best)
-            {
-                nvotes_best = nvotes_cur;
-                std::copy(vote_cur, vote_cur + ndata, vote_best);
+                auto begin = exact_est_params.begin() + iresult * nparam;
+                auto end = exact_est_params.begin() + (iresult + 1) * nparam;
+                vector<S> exact_est_params_tmp(begin, end);
                 
-                if(nvotes_best == ndata) // all data are inliers, terminate the loop
-                    i = niters;
-                else
+                nvotes_cur = 0;
+                std::fill(vote_cur, vote_cur + ndata, 0);
+                
+                // ndata - j: number of data that have NOT been checked yet
+                for (j = 0; j < ndata && nvotes_best - nvotes_cur < ndata - j + 1; ++j)
                 {
-                    denominator = log(1.0 - pow((float)nvotes_cur / (float)ndata, (float)ndata_est));
-                    niters = (int)(numerator/denominator + 0.5);
-                    niters = niters < max_niters ? niters : max_niters;
+                    if (param_estimator->check_inliers(data[j], exact_est_params_tmp))
+                    {
+                        vote_cur[j] = 1;
+                        ++nvotes_cur;
+                    }
+                }
+                
+                if(nvotes_cur > nvotes_best)
+                {
+                    nvotes_best = nvotes_cur;
+                    std::copy(vote_cur, vote_cur + ndata, vote_best);
+                    
+                    if(nvotes_best == ndata) // all data are inliers, terminate the loop
+                        i = niters;
+                    else
+                    {
+                        denominator = log(1.0 - pow((float)nvotes_cur / (float)ndata, (float)ndata_min));
+                        niters = (int)(numerator/denominator + 0.5);
+                        niters = niters < max_niters ? niters : max_niters;
+                    }
                 }
             }
         }
@@ -121,14 +134,14 @@ float Ransac<T, S>::estimate(Param_Estimator<T, S>* param_estimator,
     }
     
     // release the memory
-    typename std::set<int*, Subset_Ind_Cmp>::iterator it = chosen_subset.begin();
-    typename std::set<int*, Subset_Ind_Cmp>::iterator chosen_subset_end = chosen_subset.end();
-    while (it != chosen_subset_end)
+    typename std::set<int*, Subset_Ind_Cmp>::iterator it = subset_ind.begin();
+    typename std::set<int*, Subset_Ind_Cmp>::iterator subset_ind_end = subset_ind.end();
+    while (it != subset_ind_end)
     {
         delete [] (*it);
         ++it;
     }
-    chosen_subset.clear();
+    subset_ind.clear();
     
     if (nvotes_best > 0)
     {
@@ -145,7 +158,7 @@ float Ransac<T, S>::estimate(Param_Estimator<T, S>* param_estimator,
     
     return (float) nvotes_best / (float) ndata;
 }
-    
+
 template<class T, class S>
 unsigned int Ransac<T, S>::choose(unsigned int n, unsigned int m)
 {
@@ -177,6 +190,7 @@ unsigned int Ransac<T, S>::choose(unsigned int n, unsigned int m)
         return static_cast<unsigned int>(result);
 }
     
-template class Ransac<std::pair<Vec2f, Vec2f>, float>;
+template class Ransac<std::pair<Vec2f, Vec2f>, float>; // for eight point fundamental matrix estimation
+template class Ransac<std::pair<Vec2f, Vec2f>, vector<float> >; // for seven point fundamental matrix estimation
 
 }

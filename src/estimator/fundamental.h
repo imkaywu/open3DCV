@@ -21,13 +21,13 @@ public:
     
     void ls_estimate(std::vector<std::pair<Vec2f, Vec2f> >& data, std::vector<float>& params);
     
-    int check_inliers(std::vector<float>& params, std::pair<Vec2f, Vec2f>& data);
+    int check_inliers(std::pair<Vec2f, Vec2f>& data, std::vector<float>& params);
 
-    void fund_seven_pts (const std::vector<Vec2f>& x1, const std::vector<Vec2f>& x2, vector<Mat3f>& F);
+//    void fund_seven_pts (const std::vector<Vec2f>& x1, const std::vector<Vec2f>& x2, vector<Mat3f>& F);
     
 private:
     
-//    void fund_seven_pts (const std::vector<Vec2f>& x1, const std::vector<Vec2f>& x2, vector<Mat3f>& F);
+    void fund_seven_pts (const std::vector<Vec2f>& x1, const std::vector<Vec2f>& x2, vector<Mat3f>& F);
     
     void fund_eight_pts(const std::vector<Vec2f>& x1, const std::vector<Vec2f>& x2, Mat3f& F);
     

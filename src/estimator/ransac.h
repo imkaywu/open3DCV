@@ -25,7 +25,7 @@ public:
     
 private:
     
-    // has to be static
+    // this has to be static, why?
     static unsigned int choose(unsigned int n, unsigned int m);
     
     class Subset_Ind_Cmp

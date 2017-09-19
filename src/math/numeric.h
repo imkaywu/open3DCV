@@ -404,12 +404,12 @@ inline double DistanceLInfinity( const TVec &x, const TVec &y )
 * @note Input vector nullspace may be resized to store the full result
 */
 template <typename TMat, typename TVec>
-double Nullspace( TMat *A, TVec *nullspace )
+double nullspace( TMat *A, TVec *x )
 {
   if ( A->rows() >= A->cols() )
   {
     Eigen::JacobiSVD<TMat> svd( *A, Eigen::ComputeFullV );
-    ( *nullspace ) = svd.matrixV().col( A->cols() - 1 );
+    ( *x ) = svd.matrixV().col( A->cols() - 1 );
     return svd.singularValues()( A->cols() - 1 );
   }
   // Extend A with rows of zeros to make it square. It's a hack, but is
@@ -417,7 +417,7 @@ double Nullspace( TMat *A, TVec *nullspace )
   TMat A_extended( A->cols(), A->cols() );
   A_extended.block( A->rows(), 0, A->cols() - A->rows(), A->cols() ).setZero();
   A_extended.block( 0, 0, A->rows(), A->cols() ) = ( *A );
-  return Nullspace( &A_extended, nullspace );
+  return nullspace( &A_extended, x );
 }
 
 /**

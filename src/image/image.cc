@@ -1,7 +1,7 @@
 #include "image.h"
 #include <fstream>
 
-#define cimg_display 0          // don't have X11 installed or don't want display capabilities of CImg
+#define cimg_display 0          // 0 if don't have X11 installed or don't want display capabilities of CImg, 1 if use X11
 #if defined(PMVS_HAVE_PNG)		// See CMakeLists.txt
 #	define cimg_use_png
 #endif

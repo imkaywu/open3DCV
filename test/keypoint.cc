@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include "keypoint/sift.h"
-#include "vis/plot.h"
+#include "viz/plot.h"
 
 using namespace std;
 using namespace open3DCV;

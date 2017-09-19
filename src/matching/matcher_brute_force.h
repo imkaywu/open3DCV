@@ -17,6 +17,7 @@ namespace open3DCV
         
         void init_param(Matcher_Param r_matcher_param);
         int match(const vector<Vecf>& desc1, const vector<Vecf>& desc2, vector<Match>& matches);
+        int match(const vector<Vecf>& desc1, const vector<Vecf>& desc2, vector<Match>& matches, float (*dist_metric)(const Vecf& desc1, const Vecf& desc2));
     };
     
     inline Matcher_Brute_Force::Matcher_Brute_Force (Matcher_Param r_matcher_param)
@@ -31,6 +32,11 @@ namespace open3DCV
     
     inline int Matcher_Brute_Force::match(const vector<Vecf>& desc1, const vector<Vecf>& desc2, vector<Match>& matches)
     {
+        return match(desc1, desc2, matches, l2_dist);
+    }
+    
+    inline int Matcher_Brute_Force::match(const vector<Vecf>& desc1, const vector<Vecf>& desc2, vector<Match>& matches, float (*dist_metric)(const Vecf& desc1, const Vecf& desc2))
+    {
         float dist = 0, min_dist = 1e8, sec_min_dist = 1e8, ratio = matcher_param_.ratio;
         int ind_min_key = 0;
         
@@ -39,7 +45,7 @@ namespace open3DCV
             min_dist = sec_min_dist = 1e8;
             for (int j = 0; j < desc2.size(); ++j)
             {
-                dist = l2_dist(desc1[i], desc2[j]);
+                dist = dist_metric(desc1[i], desc2[j]);
                 if (dist < min_dist)
                 {
                     sec_min_dist = min_dist;

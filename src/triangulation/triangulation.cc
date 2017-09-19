@@ -3,7 +3,7 @@ using std::isnan;
 #include <limits>
 using std::numeric_limits;
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 using Eigen::Vector3d;
 using Eigen::Vector4d;
 using Eigen::VectorXd;
@@ -17,6 +17,11 @@ namespace open3DCV {
 
     Triangulation::Triangulation() {
       //no-op
+    }
+    
+    bool triangulate_linear(const vector<Camera>& cameras, const Track& track, Structure_Point& struct_pts)
+    {
+        
     }
 
     StructurePoint Triangulation::linear(const vector<Camera> &cameras,
