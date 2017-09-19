@@ -16,7 +16,7 @@ namespace open3DCV
         unsigned int size() const; // length of the feature track
         
     protected:
-        vector<Keypoint> keypoints; // the collection of keypoints
+        std::vector<Keypoint> keypoints; // the collection of keypoints
         
     };
     
@@ -24,7 +24,7 @@ namespace open3DCV
         keypoints.push_back(k);
     }
     
-    inline void Track::remove_keypoint(unsigned int index) {
+    inline void Track::rm_keypoint(unsigned int index) {
         keypoints.erase(keypoints.begin() + index);
     }
     
@@ -33,7 +33,7 @@ namespace open3DCV
     }
     
     inline unsigned int Track::size() const {
-        return keypoints.size();
+        return static_cast<unsigned int>(keypoints.size());
     }
 }
 

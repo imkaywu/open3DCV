@@ -9,7 +9,7 @@ namespace open3DCV
         Structure_Point(const Vec3f &coord, const Vec3i &col) { }
         
         const Vec3f &coords() const;
-        Vector3d &coords();
+        Vec3f &coords();
         const Vector3i &color() const;
         
     protected:

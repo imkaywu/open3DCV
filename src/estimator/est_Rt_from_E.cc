@@ -1,5 +1,6 @@
 #include "Eigen/SVD"
 #include "est_Rt_from_E.h"
+#include "triangulation/triangulation.h"
 
 using std::vector;
 using Eigen::JacobiSVD;
@@ -53,7 +54,7 @@ namespace open3DCV
         rt_from_e(E, Rs, ts);
         
         // four possible solutions
-        vector<Mat3Xf> Rts(4);
+        vector<Mat34f> Rts(4);
         for (int i = 0; i < Rs.size(); ++i)
             for (int j = 0; j < ts.size(); ++j)
             {
@@ -61,7 +62,36 @@ namespace open3DCV
                 Rts[i * ts.size() + j].block<3, 1>(0, 3) = ts[j];
             }
         
-        // triangulation
+        // ???
+        Mat3f K;
+        vector<Vec2f> pts;
+        vector<Vec3f> pts_triangulated;
         
+        // triangulation
+        vector<Mat34f> poses(2);
+        poses[0].block<3, 3>(0, 0) = K;
+        poses[0].block<3, 1>(0, 3) = Vec3f::Zero();
+        
+        vector<int> good_count(4);
+        for (int i = 0; i < 4; ++i)
+        {
+            poses[1] = K * Rts[i];
+            triangulate_nonlinear(poses, pts, pts_triangulated);
+            
+            good_count[i] = 0;
+            for (int j = 0; j < pts.size(); ++j)
+            {
+                float d = Rts[i].block<1, 3>(2, 0) * (pts_triangulated[i] - ts[i]);
+                if (pts_triangulated[i](2) > 0 && d > 0)
+                {
+                    ++good_count[i];
+                }
+            }
+        }
+        
+        vector<size_t> idx;
+        idx = sort_indexes(good_count);
+        R = Rts[idx[0]].block<3, 3>(0, 0);
+        t = Rts[idx[0]].block<3, 1>(0, 3);
     }
 }

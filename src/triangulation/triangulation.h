@@ -2,20 +2,26 @@
 #define triangulation_h_
 
 #include <vector>
-using std::vector;
+#include "camera/camera.h"
 #include "sfm/track.h"
-using open3DCV::Track;
 #include "sfm/structure_point.h"
-using open3DCV::Structure_Point;
+
+using std::vector;
 
 namespace open3DCV {
     
-    bool triangulate_linear(const vector<Camera>& cameras, const Track& track, Structure_Point& struct_pts); // DLT
+    // DLT
+    bool triangulate_linear(const vector<Mat34f>& poses, const vector<Vec2f>& pts, vector<Vec3f>& pts_triangulated);
+    bool triangulate_linear(const vector<Camera>& cameras, const Track& track, Structure_Point& struct_pts);
     
+    // mid-point algorithm
     bool triangulate_midpoint(const vector<Camera>& cameras, const Track& track, Structure_Point& struct_pts);
     
+    // minimizing the sampsen error
+    bool triangulate_nonlinear(const vector<Mat34f>& poses, const vector<Vec2f>& pts, vector<Vec3f>& pts_triangulated);
     bool triangulate_nonlinear(const vector<Camera>& cameras, const Track& track, Structure_Point& struct_pts);
     
+    //
     bool triangulate_angular(const vector<Camera>& cameras, const Track& track, Structure_Point& struct_pts);
     
     

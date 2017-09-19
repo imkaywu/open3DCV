@@ -14,10 +14,6 @@ using Eigen::SelfAdjointEigenSolver;
 #include "triangulation.h"
 
 namespace open3DCV {
-
-    Triangulation::Triangulation() {
-      //no-op
-    }
     
     bool triangulate_linear(const vector<Camera>& cameras, const Track& track, Structure_Point& struct_pts)
     {
