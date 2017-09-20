@@ -206,7 +206,6 @@ int main(int argc, const char* argv[])
     
     for (int i = 0; i < matches.size(); ++i)
     {
-//        draw_plus(image1, data[i].first.cast<int>());
         slope = pt2slope<Vec2f>(data[i].first, e1.block<2, 1>(0, 0));
         draw_line(image1, slope);
         slope = F * data[i].first.homogeneous();

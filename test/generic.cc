@@ -10,7 +10,7 @@ extern "C" {
 #include <iostream>
 #include "image.h"
 
-/*
+
 int main(int argc, const char * argv[]) {
     std::string fname = "/Users/BlacKay/Documents/Projects/Images/test/mandrill.pgm";
     FILE *in = 0;
@@ -85,4 +85,3 @@ int main(int argc, const char * argv[]) {
     std::cout << "End: VlPgmImage" << std::endl;
     
 }
-*/

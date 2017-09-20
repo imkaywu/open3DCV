@@ -11,6 +11,8 @@ class Camera
 {
 public:
     Camera();
+    Camera(const std::vector<float>& r_intrinsics, const std::vector<float>& r_extrinsics);
+    Camera(const Mat34f& r_projection);
     virtual ~Camera();
     
     // IO: read/write from file
@@ -23,6 +25,14 @@ public:
     void setK(Mat3f& K) const;
     void setR(Mat3f& R) const;
     void setRt(Mat4f& Rt) const;
+    
+    // get various camera properties
+    const Mat34f& projection() const;
+    Mat34f& projection();
+    const Vec3f& direction() const;
+    Vec3f& direction();
+    const Vec3f& center() const;
+    Vec3f& center();
     
     // get camera coordinate system
     void getAxes();
@@ -54,9 +64,9 @@ public:
     // camera pamameter type
     int m_txtType;
     // optical center
-    Vec4f m_center;
+    Vec3f m_center;
     // optical axis
-    Vec4f m_oaxis;
+    Vec3f m_oaxis;
     // x-axis of the camera-centered coordinate system
     Vec3f m_xaxis;
     // y-axis of the camera-centered coordinate system
@@ -64,7 +74,7 @@ public:
     // z-axis of the camera-centered coordinate system
     Vec3f m_zaxis;
     // 3x4 projection matrix
-    Mat3Xf m_projection;
+    Mat34f m_projection;
     // intrinsic and extrinsic camera parameters
     std::vector<float> m_intrinsics;
     std::vector<float> m_extrinsics;

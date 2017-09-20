@@ -95,6 +95,7 @@ typedef Eigen::MatrixXi Mati;
 typedef Eigen::MatrixXf Matf;
 typedef Eigen::MatrixXd Mat;
 typedef Eigen::Matrix<float, 2, Eigen::Dynamic> Mat2Xf;
+typedef Eigen::Matrix<float, Eigen::Dynamic, 2> MatX2f;
 typedef Eigen::Matrix<float, 3, Eigen::Dynamic> Mat3Xf;
 typedef Eigen::Matrix<float, 4, Eigen::Dynamic> Mat4Xf;
 typedef Eigen::Matrix<float, 9, Eigen::Dynamic> Mat9Xf;
@@ -251,6 +252,51 @@ inline int rq(T M, T& R, T& Q)
     
     return 0;
 }
+    
+template <typename TMat, typename TVec>
+float nullspace( TMat *A, TVec *x )
+{
+    if ( A->rows() >= A->cols() )
+    {
+        Eigen::JacobiSVD<TMat> svd( *A, Eigen::ComputeFullV );
+        ( *x ) = svd.matrixV().col( A->cols() - 1 );
+        return svd.singularValues()( A->cols() - 1 );
+    }
+    // Extend A with rows of zeros to make it square. It's a hack, but is
+    // necessary until Eigen supports SVD with more columns than rows.
+    TMat A_extended( A->cols(), A->cols() );
+    A_extended.block( A->rows(), 0, A->cols() - A->rows(), A->cols() ).setZero();
+    A_extended.block( 0, 0, A->rows(), A->cols() ) = ( *A );
+    return nullspace( &A_extended, x );
+}
+    
+template <typename Mat0, typename Mat1, typename Mat2>
+void svd(Mat0 *A, Mat1 *U, Mat2 *S, Mat2 *V)
+{
+    if (A->rows() >= A->cols())
+    {
+        Eigen::JacobiSVD<Mat0> asvd(*A, Eigen::ComputeFullU | Eigen::ComputeFullV);
+        if (U)
+        {
+            (*U) = asvd.matrixU();
+        }
+        if (S)
+        {
+            (*S) = asvd.singularValues().diagonal();
+        }
+        if (V)
+        {
+            (*V) = asvd.matrixV();
+        }
+    }
+    else
+    {
+        Mat1 A_extended(A->cols(), A->cols());
+        A_extended.block<A->rows(), A->cols()>(0, 0) = (*A);
+        A_extended.block<A->cols() - A->rows(), A->cols()>(A->rows(), 0).setZero();
+        svd(&A_extended, U, S, V);
+    }
+}
 
 /**
 * @brief Compute square of a number
@@ -403,22 +449,22 @@ inline double DistanceLInfinity( const TVec &x, const TVec &y )
 * @note Input matrix A content may be modified during computation
 * @note Input vector nullspace may be resized to store the full result
 */
-template <typename TMat, typename TVec>
-double nullspace( TMat *A, TVec *x )
-{
-  if ( A->rows() >= A->cols() )
-  {
-    Eigen::JacobiSVD<TMat> svd( *A, Eigen::ComputeFullV );
-    ( *x ) = svd.matrixV().col( A->cols() - 1 );
-    return svd.singularValues()( A->cols() - 1 );
-  }
-  // Extend A with rows of zeros to make it square. It's a hack, but is
-  // necessary until Eigen supports SVD with more columns than rows.
-  TMat A_extended( A->cols(), A->cols() );
-  A_extended.block( A->rows(), 0, A->cols() - A->rows(), A->cols() ).setZero();
-  A_extended.block( 0, 0, A->rows(), A->cols() ) = ( *A );
-  return nullspace( &A_extended, x );
-}
+//template <typename TMat, typename TVec>
+//double Nullsapce( TMat *A, TVec *x )
+//{
+//  if ( A->rows() >= A->cols() )
+//  {
+//    Eigen::JacobiSVD<TMat> svd( *A, Eigen::ComputeFullV );
+//    ( *x ) = svd.matrixV().col( A->cols() - 1 );
+//    return svd.singularValues()( A->cols() - 1 );
+//  }
+//  // Extend A with rows of zeros to make it square. It's a hack, but is
+//  // necessary until Eigen supports SVD with more columns than rows.
+//  TMat A_extended( A->cols(), A->cols() );
+//  A_extended.block( A->rows(), 0, A->cols() - A->rows(), A->cols() ).setZero();
+//  A_extended.block( 0, 0, A->rows(), A->cols() ) = ( *A );
+//  return Nullsapce( &A_extended, x );
+//}
 
 /**
 * @brief Solve linear system and gives the two best solutions

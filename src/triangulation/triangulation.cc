@@ -1,145 +1,260 @@
 #include <cmath>
-using std::isnan;
 #include <limits>
-using std::numeric_limits;
-
-#include <Eigen/Dense>
-using Eigen::Vector3d;
-using Eigen::Vector4d;
-using Eigen::VectorXd;
-using Eigen::Vector3i;
-using Eigen::MatrixXd;
-using Eigen::SelfAdjointEigenSolver;
-
+#include "math/numeric.h"
+#include "camera/camera.h"
 #include "triangulation.h"
+
+using std::isnan;
+using std::numeric_limits;
 
 namespace open3DCV {
     
-    bool triangulate_linear(const vector<Camera>& cameras, const Track& track, Structure_Point& struct_pts)
+    // ---------------------------- Linear triangulation
+    void triangulate_linear(const vector<Mat34f>& poses, const vector<Vec2f>& pts, Vec3f& pt_triangulated)
     {
-        
-    }
-
-    StructurePoint Triangulation::linear(const vector<Camera> &cameras,
-      const FeatureTrack &track) const
-    {
-      MatrixXd A(2*track.size(), 4);
-      Vector3i color(0,0,0);
-      for(unsigned int k = 0; k < track.size(); ++k) {
-        double x = track[k].coords().x();
-        double y = track[k].coords().y();
-        color += track[k].color();
-        unsigned int index = track[k].index();
-        const MatrixXd &Pi = cameras[index].projection();
-        Vector4d pi1t(Pi(0,0),Pi(0,1),Pi(0,2),Pi(0,3));
-        Vector4d pi2t(Pi(1,0),Pi(1,1),Pi(1,2),Pi(1,3));
-        Vector4d pi3t(Pi(2,0),Pi(2,1),Pi(2,2),Pi(2,3));
-        Vector4d a = x*pi3t - pi1t;
-        a.normalize();
-        Vector4d b = y*pi3t - pi2t;
-        b.normalize();
-        A(2*k,0) = a.x();A(2*k,1) = a(1);A(2*k,2) = a(2);A(2*k,3) = a(3);
-        A(2*k+1,0) = b(0);A(2*k+1,1) = b(1);A(2*k+1,2) = b(2);A(2*k+1,3) = b(3);
-      }
-      SelfAdjointEigenSolver<MatrixXd> eigensolver(A.transpose()*A);
-      MatrixXd evectors = eigensolver.eigenvectors();
-      double denom = 1.0/evectors(3,0);
-      Vector3d p(evectors(0,0)*denom, evectors(1,0)*denom, evectors(2,0)*denom);
-      return StructurePoint(p, color);
-    }
-
-    StructurePoint Triangulation::midpoint(const vector<Camera> &cameras,
-     const FeatureTrack &track) const
-    {
-      double min_dist = numeric_limits<double>::max();
-      Vector3d min_mp;
-      unsigned int size = track.size();
-      Vector3i color(0,0,0);
-      for(unsigned int i = 0; i < size; ++i) {
-        unsigned int i1 = track[i].index();
-        Vector3d pos1 = cameras[i1].position();
-        Vector3d dir1 = cameras[i1].direction(track[i].coords());
-        for(unsigned int j = i+1; j < size; ++j) {
-          unsigned int i2 = track[j].index();
-          Vector3d pos2 = cameras[i2].position();
-          Vector3d dir2 = cameras[i2].direction(track[j].coords());
-          Vector3d c = dir1.cross(dir2);
-          double x = c.x(), y = c.y(), z = c.z();
-          double denom = 1.0/(x*x + y*y + z*z);
-          double a1 = ((pos2-pos1).cross(dir2)).dot(c)*denom;
-          double a2 = ((pos2-pos1).cross(dir1)).dot(c)*denom;
-          Vector3d p1 = pos1 + a1 * dir1;
-          Vector3d p2 = pos2 + a2 * dir2;
-          Vector3d d = p1-p2;
-          double dist = sqrt(d.dot(d));
-          Vector3d cd = pos1-pos2;
-          double cdist = 1/sqrt(cd.dot(cd));
-          Vector3d mp = (p1+p2)*0.5;
-          min_mp = dist*cdist < min_dist ? (min_dist = dist*cdist), mp : min_mp;
-          if(dist*cdist < .1) {
-            color = track[i].color() + track[j].color();
-            color /= 2;
-            return StructurePoint(min_mp, color);
-          }
+        Matf A(2 * pts.size(), 4);
+        for (int i = 0; i < pts.size(); ++i)
+        {
+            float x = pts[i](0);
+            float y = pts[i](1);
+            const Mat34f pose = poses[i];
+            Vec4f p1t = pose.row(0);
+            Vec4f p2t = pose.row(1);
+            Vec4f p3t = pose.row(2);
+            Vec4f a = x * p3t - p1t;
+            Vec4f b = y * p3t - p2t;
+            a.normalize();
+            b.normalize();
+            A.block<1, 4>(2 * i, 0) = a.transpose();
+            A.block<1, 4>(2 * i + 1, 0) = b.transpose();
         }
-      }
-      return StructurePoint(min_mp, track[0].color());
+        Vec4f X;
+        nullspace<Matf, Vec4f>(&A, &X);
+        pt_triangulated = X.block<3, 1>(0, 0).array() / X(3);
     }
-
-    StructurePoint Triangulation::angular(const vector<Camera> &cameras,
-      const FeatureTrack &track) const
+    
+    void triangulate_linear(const vector<Camera>& cameras, const vector<Keypoint>& keys, Vec3f& pt_triangulated)
     {
-      double precision = 1e-25;
-      StructurePoint point = midpoint(cameras, track);
-      Vector3d g_old;
-      Vector3d x_old;
-      Vector3d x_new = point.coords();
-      Vector3d grad = angular_gradient(cameras, track, x_new);
-      double epsilon = .001;
-      double diff;
-      int count = 150;
-      do {
-        x_old = x_new;
-        g_old = grad;
-        x_new = x_old - epsilon * g_old;
-        grad = angular_gradient(cameras, track, x_new);
-        Vector3d sk = x_new - x_old;
-        Vector3d yk = grad - g_old;
-        double skx = sk.x();
-        double sky = sk.y();
-        double skz = sk.z();
-        diff = skx*skx+sky*sky+skz*skz;
-        //Compute adaptive step size (sometimes get a divide by zero hence
-        //the subsequent check)
-        epsilon = diff/(skx*yk.x()+sky*yk.y()+skz*yk.z());
-        epsilon = (epsilon != epsilon) ||
-          (epsilon == numeric_limits<double>::infinity()) ? .001 : epsilon;
-        --count;
-      } while(diff > precision && count-- > 0);
-      if(isnan(x_new.x()) || isnan(x_new.y()) || isnan(x_new.z())) {
-        return point;
-      }
-      return StructurePoint(x_new, point.color());
+        vector<Mat34f> poses(keys.size());
+        vector<Vec2f> pts(keys.size());
+        for (int i = 0; i < keys.size(); ++i)
+        {
+            int idx = keys[i].index();
+            poses[i] = cameras[idx].projection();
+            pts[i] = keys[i].coords();
+        }
+        triangulate_linear(poses, pts, pt_triangulated);
     }
-
-    Vector3d Triangulation::angular_gradient(const vector<Camera> &cameras,
-      const FeatureTrack &track, const Vector3d &point) const
+    
+    void triangulate_linear(const vector<Camera>& cameras, const Track& track, Structure_Point& structure_pt)
     {
-      Vector3d g = Vector3d(0,0,0);
-      for(unsigned int i = 0; i < track.size(); ++i) {
-        const Keypoint& f = track[i];
-        const Camera& cam = cameras[f.index()];
-        Vector3d w = cam.direction(f.coords());
-        Vector3d v = point - cam.position();
-        double denom2 = v.dot(v);
-        double denom = sqrt(denom2);
-        double denom15 = pow(denom2, 1.5);
-        double vdotw = v.dot(w);
-        g.x() += (-w.x()/denom) + ((v.x()*vdotw)/denom15);
-        g.y() += (-w.y()/denom) + ((v.y()*vdotw)/denom15);
-        g.z() += (-w.z()/denom) + ((v.z()*vdotw)/denom15);
-      }
-
-      return g;
+        vector<Mat34f> poses(track.size());
+        vector<Vec2f> pts(track.size());
+        Vec3i color(0, 0, 0);
+        for (int i = 0; i < track.size(); ++i)
+        {
+            poses[i] = cameras[track[i].index()].projection();
+            pts[i] = track[i].coords();
+            color += track[i].color();
+        }
+        Vec3f pt_triangulated;
+        triangulate_linear(poses, pts, pt_triangulated);
+        structure_pt.coords() = pt_triangulated;
+        structure_pt.color() = color;
     }
+    
+    // ---------------------------- Midpoint triangulation
+    void triangulate_midpoint(const vector<Vec3f>& centers, const vector<Vec3f>& directions, const vector<Vec2f>& pts, Vec3f& pt_triangulated)
+    {
+        double min_dist = numeric_limits<float>::max();
+        Vec3f min_midpoint(0, 0, 0);
+        int size_pts = static_cast<int>(pts.size());
+        
+        for (int i = 0; i < size_pts; ++i)
+        {
+            Vec3f center1 = centers[i];
+            Vec3f direct1 = directions[i];
+            for (int j = i + 1; j < size_pts; ++j)
+            {
+                Vec3f center2 = centers[j];
+                Vec3f direct2 = directions[j];
+                
+                Vec3f direct_cross = direct1.cross(direct2);
+                float denom = 1.0f / direct_cross.dot(direct_cross);
+                float a1 = ((center2 - center1).cross(direct2)).dot(direct_cross) * denom;
+                float a2 = ((center2 - center1).cross(direct1)).dot(direct_cross) * denom;
+                Vec3f p1 = center1 + a1 * direct1;
+                Vec3f p2 = center2 + a2 * direct2;
+                
+                Vec3f d = p1 - p2;
+                float dist = sqrt(d.dot(d));
+                Vec3f cd = center1 - center2;
+                float cdist = sqrt(cd.dot(cd));
+                Vec3f midpoint = (p1 + p2) * 0.5;
+                min_midpoint = dist * cdist < min_dist ? (min_dist = dist * cdist), midpoint : min_midpoint;
+                if (dist * cdist < 0.1f)
+                {
+                    pt_triangulated = min_midpoint;
+                }
+            }
+        }
+        pt_triangulated = min_midpoint;
+    }
+    
+    void triangulate_midpoint(const vector<Camera>& cameras, const vector<Keypoint>& keys, Vec3f& pt_triangulated)
+    {
+        int sz = static_cast<int>(keys.size());
+        vector<Vec3f> centers(sz);
+        vector<Vec3f> directs(sz);
+        vector<Vec2f> pts(sz);
+        
+        for (int i = 0; i < sz; ++i)
+        {
+            int idx = keys[i].index();
+            centers[i] = cameras[idx].center();
+            directs[i] = cameras[idx].direction();
+            pts[i] = keys[i].coords();
+        }
+        triangulate_midpoint(centers, directs, pts, pt_triangulated);
+    }
+    
+    void triangulate_midpoint(const vector<Camera>& cameras, const Track& track, Structure_Point& structure_point)
+    {
+        int sz = static_cast<int>(track.size());
+        vector<Vec3f> centers(sz);
+        vector<Vec3f> directs(sz);
+        vector<Vec2f> pts(sz);
+        Vec3i color(0, 0, 0);
+        for (int i = 0; i < sz; ++i)
+        {
+            int idx = track[i].index();
+            centers[i] = cameras[idx].center();
+            directs[i] = cameras[idx].direction();
+            pts[i] = track[i].coords();
+            color += track[i].color();
+        }
+        Vec3f pt_triangulated;
+        triangulate_midpoint(centers, directs, pts, pt_triangulated);
+        structure_point.coords() = pt_triangulated;
+        structure_point.color() = color / sz;
+    }
+    
+    // ---------------------------- Nonlinear triangulation
+    // adapted from vgg_X_from_xP_nonlin
+    void triangulate_nonlinear(const vector<Mat34f>& poses, const vector<Vec2f>& pts, Vec3f& pt_triangulated)
+    {
+        int sz = static_cast<int>(pts.size());
+        triangulate_linear(poses, pts, pt_triangulated);
+        
+        Mat4f T, Ttmp;
+        Eigen::Matrix<float, 1, 4> pt_triangulated_homo = pt_triangulated.transpose().homogeneous();
+        Mat4f A;
+        A.setZero();
+        A.block<1, 4>(0, 0) = pt_triangulated_homo;
+        Eigen::JacobiSVD<Mat4f> asvd(A, Eigen::ComputeFullV);
+        T = asvd.matrixV();
+//        svd<Eigen::Matrix<float, 1, 4>, Mat4f, Mat4f>(&pt_triangulated_homo, nullptr, nullptr, &T);
+        Ttmp.block<4, 3>(0, 0) = T.block<4, 3>(0, 1);
+        Ttmp.block<4, 1>(0, 3) = T.block<4, 1>(0, 0);
+        T = Ttmp;
+
+        vector<Mat34f> Q(sz);
+        for (int i = 0; i < sz; ++i)
+        {
+            Q[i] = poses[i] * T;
+        }
+        
+        // Newton
+        Vec3f Y(0, 0, 0);
+        Vecf err_prev(2 * sz), err(2 * sz);
+        Matf J(2 * sz, 3);
+        err_prev.setOnes();
+        err_prev *= numeric_limits<float>::max();
+        const int niters = 10;
+        for (int i = 0; i < niters; ++i)
+        {
+            residule(Y, pts, Q, err, J);
+            if (1 - err.norm() / err_prev.norm() < 10e-8)
+                break;
+            
+            err_prev = err;
+            Y = Y - (J.transpose() * J).inverse() * (J.transpose() * err);
+        }
+        
+        Vec4f X = T * Y.homogeneous();
+        pt_triangulated = X.block<3, 1>(0, 0).array() / X(3);
+    }
+    
+    void residule(const Vec3f& pt3d, const vector<Vec2f>& pts, const vector<Mat34f>& Q, Vecf& e, Matf& J)
+    {
+        int sz = static_cast<int>(pts.size());
+        Vec3f x;
+        for (int i = 0; i < sz; ++i)
+        {
+            Mat3f q = Q[i].block<3, 3>(0, 0);
+            Vec3f x0 = Q[i].block<3, 1>(0, 3);
+            x = q * pt3d + x0;
+            e.block<2, 1>(2 * i, 0) = x.block<2, 1>(0, 0) / x(2) - pts[i];
+            J.block<1, 3>(2 * i, 0) = (x(2) * q.row(0) - x(0) * q.row(2)) / powf(x(2), 2.0);
+            J.block<1, 3>(2 * i + 1, 0) = (x(2) * q.row(1) - x(1) * q.row(2)) / powf(x(2), 2.0);
+        }
+    }
+    
+    // ---------------------------- Angular triangulation
+//    StructurePoint Triangulation::angular(const vector<Camera> &cameras,
+//      const FeatureTrack &track) const
+//    {
+//      double precision = 1e-25;
+//      StructurePoint point = midpoint(cameras, track);
+//      Vector3d g_old;
+//      Vector3d x_old;
+//      Vector3d x_new = point.coords();
+//      Vector3d grad = angular_gradient(cameras, track, x_new);
+//      double epsilon = .001;
+//      double diff;
+//      int count = 150;
+//      do {
+//        x_old = x_new;
+//        g_old = grad;
+//        x_new = x_old - epsilon * g_old;
+//        grad = angular_gradient(cameras, track, x_new);
+//        Vector3d sk = x_new - x_old;
+//        Vector3d yk = grad - g_old;
+//        double skx = sk.x();
+//        double sky = sk.y();
+//        double skz = sk.z();
+//        diff = skx*skx+sky*sky+skz*skz;
+//        //Compute adaptive step size (sometimes get a divide by zero hence
+//        //the subsequent check)
+//        epsilon = diff/(skx*yk.x()+sky*yk.y()+skz*yk.z());
+//        epsilon = (epsilon != epsilon) ||
+//          (epsilon == numeric_limits<double>::infinity()) ? .001 : epsilon;
+//        --count;
+//      } while(diff > precision && count-- > 0);
+//      if(isnan(x_new.x()) || isnan(x_new.y()) || isnan(x_new.z())) {
+//        return point;
+//      }
+//      return StructurePoint(x_new, point.color());
+//    }
+//
+//    Vector3d Triangulation::angular_gradient(const vector<Camera> &cameras,
+//      const FeatureTrack &track, const Vector3d &point) const
+//    {
+//      Vector3d g = Vector3d(0,0,0);
+//      for(unsigned int i = 0; i < track.size(); ++i) {
+//        const Keypoint& f = track[i];
+//        const Camera& cam = cameras[f.index()];
+//        Vector3d w = cam.direction(f.coords());
+//        Vector3d v = point - cam.position();
+//        double denom2 = v.dot(v);
+//        double denom = sqrt(denom2);
+//        double denom15 = pow(denom2, 1.5);
+//        double vdotw = v.dot(w);
+//        g.x() += (-w.x()/denom) + ((v.x()*vdotw)/denom15);
+//        g.y() += (-w.y()/denom) + ((v.y()*vdotw)/denom15);
+//        g.z() += (-w.z()/denom) + ((v.z()*vdotw)/denom15);
+//      }
+//
+//      return g;
+//    }
 }

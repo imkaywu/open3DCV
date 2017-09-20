@@ -12,10 +12,10 @@
 using namespace std;
 using namespace open3DCV;
 
-/*
+
 int main(int argc, const char * argv[]) {
     
     
     return 0;
 }
-*/
+
