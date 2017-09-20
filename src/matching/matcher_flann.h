@@ -2,6 +2,7 @@
 #define matcher_flann_h_
 
 #include "keypoint/descriptor.h"
+#include "matching/distance.h"
 #include "matching/matcher.h"
 #include "matching/KDTreeVectorOfVectorAdaptor.h"
 #include "flann/nanoflann.h"

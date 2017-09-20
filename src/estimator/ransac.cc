@@ -36,7 +36,7 @@ float Ransac<T, S>::estimate(Param_Estimator<T, S>* param_estimator,
     float numerator = log(1.0 - prob_wo_outliers);
     float denominator;
     
-    unsigned int max_niters = 10000; // choose(ndata, ndata_min); // way too slow
+    unsigned int max_niters = 20000; // choose(ndata, ndata_min); // way too slow
     
     params.clear();
     srand((unsigned)time(NULL));

@@ -13,6 +13,8 @@ public:
     Camera();
     Camera(const std::vector<float>& r_intrinsics, const std::vector<float>& r_extrinsics);
     Camera(const Mat34f& r_projection);
+    Camera(const Mat3f& R, const Vec3f& t);
+    Camera(const Mat3f& K, const Mat3f& R, const Vec3f& t);
     virtual ~Camera();
     
     // IO: read/write from file
@@ -59,29 +61,24 @@ public:
     void getPAxes(const Vecf& coord, const Vec4f& normal, Vec4f& pxaxis, Vec4f& pyaxis, const int level = 0) const;
     void setAxisScale(const float axisScale);
     
-    // text file name of camera parameters
-    std::string m_cname;
-    // camera pamameter type
-    int m_txtType;
-    // optical center
-    Vec3f m_center;
-    // optical axis
-    Vec3f m_oaxis;
-    // x-axis of the camera-centered coordinate system
-    Vec3f m_xaxis;
-    // y-axis of the camera-centered coordinate system
-    Vec3f m_yaxis;
-    // z-axis of the camera-centered coordinate system
-    Vec3f m_zaxis;
-    // 3x4 projection matrix
-    Mat34f m_projection;
+    std::string cname_; // text file name of camera parameters
+    int param_type_; // camera pamameter type
+    Vec3f center_; // optical center
+    Vec3f oaxis_; // optical axis
+    Vec3f xaxis_; // x-axis of the camera-centered coordinate system
+    Vec3f yaxis_; // y-axis of the camera-centered coordinate system
+    Vec3f zaxis_; // z-axis of the camera-centered coordinate system
+    Mat34f projection_;
+    Mat3f K_;
+    Mat3f R_;
+    Vec3f t_;
     // intrinsic and extrinsic camera parameters
-    std::vector<float> m_intrinsics;
-    std::vector<float> m_extrinsics;
+    std::vector<float> intrinsics_;
+    std::vector<float> extrinsics_;
     // image plane scale (fx + fy), used to compute the projection/scene-image scale
-    float m_ipscale;
+    float ipscale_;
 protected:
-    float m_axisScale;
+    float axisScale_;
     
     Vec4f getCameraCenter() const;
 };

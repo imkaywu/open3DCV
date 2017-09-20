@@ -23,58 +23,74 @@ namespace open3DCV
     
     Camera::Camera()
     {
-        m_axisScale = 1.0f;
+        axisScale_ = 1.0f;
     }
     
-    Camera::Camera(const vector<float>& r_intrinsics, const vector<float>& r_extrinsics) :
-    m_intrinsics(r_intrinsics), m_extrinsics(r_extrinsics)
+    Camera::Camera(const vector<float>& r_intrinsics, const vector<float>& r_extrinsics) : intrinsics_(r_intrinsics), extrinsics_(r_extrinsics)
+    {
+        K_ << r_intrinsics[0], r_intrinsics[4], r_intrinsics[2],
+              0,               r_intrinsics[1], r_intrinsics[3],
+              0,               0,               1;
+        // rogrigues
+        
+        t_ << r_extrinsics[3], r_extrinsics[4], r_extrinsics[5];
+    }
+    
+    Camera::Camera(const Mat34f& r_projection) : projection_(r_projection)
+    {
+        // decompose projection_ to K_, R_, and t_
+    }
+    
+    Camera::Camera(const Mat3f& K, const Mat3f& R, const Vec3f& t) : K_(K), R_(R), t_(t)
+    {
+        projection_.block<3, 3>(0, 0) = K * R;
+        projection_.block<3, 1>(0, 3) = K * t;
+        
+        // from K to intrinsics_
+        
+        // from R, t to extrinsics_
+    }
+    
+    Camera::~Camera()
     {
         // no op
     }
-    
-    Camera::Camera(const Mat34f& r_projection) : m_projection(r_projection)
-    {
-        // no op
-    }
-    
-    Camera::~Camera() { }
     
     void Camera::readCamera(const string cname)
     {
-        m_cname = cname;
+        cname_ = cname;
         
-        m_intrinsics.resize(6);
-        m_extrinsics.resize(6);
-        m_projection.resize(3, 4);
+        intrinsics_.resize(6);
+        extrinsics_.resize(6);
+        projection_.resize(3, 4);
         
         ifstream ifstr;
         ifstr.open(cname.c_str());
         string header;
         ifstr >> header;
         if (header == "CONTOUR")
-            m_txtType = 0;
+            param_type_ = 0;
         else if (header == "CONTOUR2")
-            m_txtType = 2;
+            param_type_ = 2;
         else if (header == "CONTOUR3")
-            m_txtType = 3;
+            param_type_ = 3;
         else
         {
             cerr << "Unrecognizable text format" << endl;
             exit(1);
         }
-        
-        switch (m_txtType)
+        switch (param_type_)
         {
             case 0:
                 for (int i = 0; i < 6; ++i)
-                    ifstr >> m_intrinsics[i];
+                    ifstr >> intrinsics_[i];
                 for (int i = 0; i < 6; ++i)
-                    ifstr >> m_extrinsics[i];
+                    ifstr >> extrinsics_[i];
                 break;
             case 2:
-                // read file
-                //            m_projection.block(0, 0, 3, 3) = getK() * getR();
-                //            m_projection.block(0, 3, 1, 3) = -getR() * getC();
+// read file
+//            projection_.block(0, 0, 3, 3) = getK() * getR();
+//            projection_.block(0, 3, 1, 3) = -getR() * getC();
                 break;
             default:
                 break;
@@ -87,15 +103,15 @@ namespace open3DCV
     void Camera::writeCamera(const string file)
     {
         ofstream ofstr;
-        ofstr.open(m_cname.c_str());
+        ofstr.open(cname_.c_str());
         
-        switch(m_txtType)
+        switch(param_type_)
         {
             case 0:
                 ofstr << "CONTOUR\n"
-                << m_projection(0, 0) << " " << m_projection(0, 1) << " " << m_projection(0, 2) << " " << m_projection(0, 3) << endl
-                << m_projection(1, 0) << " " << m_projection(1, 1) << " " << m_projection(1, 2) << " " << m_projection(1, 3) << endl
-                << m_projection(2, 0) << " " << m_projection(2, 1) << " " << m_projection(2, 2) << " " << m_projection(2, 3);
+                << projection_(0, 0) << " " << projection_(0, 1) << " " << projection_(0, 2) << " " << projection_(0, 3) << endl
+                << projection_(1, 0) << " " << projection_(1, 1) << " " << projection_(1, 2) << " " << projection_(1, 3) << endl
+                << projection_(2, 0) << " " << projection_(2, 1) << " " << projection_(2, 2) << " " << projection_(2, 3);
                 break;
             case 1:
                 break;
@@ -107,27 +123,32 @@ namespace open3DCV
     
     const Mat34f& Camera::projection() const
     {
-        return m_projection;
+        return projection_;
     }
+    
     Mat34f& Camera::projection()
     {
-        return m_projection;
+        return projection_;
     }
+    
     const Vec3f& Camera::direction() const
     {
-        return m_oaxis;
+        return oaxis_;
     }
+    
     Vec3f& Camera::direction()
     {
-        return m_oaxis;
+        return oaxis_;
     }
+    
     const Vec3f& Camera::center() const
     {
-        return m_center;
+        return center_;
     }
+    
     Vec3f& Camera::center()
     {
-        return m_center;
+        return center_;
     }
     
     void Camera::updateProjection()
@@ -135,22 +156,22 @@ namespace open3DCV
         float params[12];
         for (int i = 0; i < 6; ++i)
         {
-            params[i] = m_intrinsics[i];
-            params[i + 6] = m_extrinsics[i];
+            params[i] = intrinsics_[i];
+            params[i + 6] = extrinsics_[i];
         }
         
-        if (m_txtType == 0)
+        if (param_type_ == 0)
         {
             for (int y = 0; y < 3; ++y)
             {
                 for (int x = 0; x < 4; ++x)
                 {
-                    m_projection(y, x) = params[4 * y + x];
+                    projection_(y, x) = params[4 * y + x];
                     //                decompose();
                 }
             }
         }
-        else if (m_txtType == 2) {
+        else if (param_type_ == 2) {
             Mat4f K;
             K << params[0], params[2], params[3], 0.0f,
             0.0f, params[1], params[4], 0.0f,
@@ -163,11 +184,11 @@ namespace open3DCV
             
             for (int y = 0; y < 3; ++y) {
                 for (int x = 0; x < 4; ++x) {
-                    m_projection(y, x) = Rttmp(y, x);
+                    projection_(y, x) = Rttmp(y, x);
                 }
             }
         }
-        else if (m_txtType == 3) {
+        else if (param_type_ == 3) {
             // to be written
         }
         else {
@@ -178,21 +199,21 @@ namespace open3DCV
     
     void Camera::getAxes()
     {
-        Vec4f oaxis = m_projection.row(2);
-        m_oaxis = oaxis.block<3, 1>(0, 0);
-        m_oaxis /= oaxis.head(3).norm();
+        Vec4f oaxis = projection_.row(2);
+        oaxis_ = oaxis.block<3, 1>(0, 0);
+        oaxis_ /= oaxis.head(3).norm();
         
-        m_zaxis = Vec3f(m_oaxis);
-        m_xaxis = Vec3f(m_projection.row(0).head(3));
-        m_yaxis = m_zaxis.cross(m_xaxis);
-        m_yaxis /= m_yaxis.norm();
-        m_xaxis = m_yaxis.cross(m_zaxis);
+        zaxis_ = Vec3f(oaxis_);
+        xaxis_ = Vec3f(projection_.row(0).head(3));
+        yaxis_ = zaxis_.cross(xaxis_);
+        yaxis_ /= yaxis_.norm();
+        xaxis_ = yaxis_.cross(zaxis_);
     }
     
     int Camera::decompose(Mat3f& K, Mat3f& R) const
     {
         Mat3f M;
-        M = m_projection.block(0, 0, 3, 3);
+        M = projection_.block(0, 0, 3, 3);
         int ret = rq(M, K, R);
         if(ret)
         {
@@ -206,35 +227,35 @@ namespace open3DCV
     void Camera::setC(Vec3f& c) const
     {
         Mat3f M;
-        M = m_projection.block(0, 0, 3, 3);
+        M = projection_.block(0, 0, 3, 3);
         
-        c = M.inverse() * m_projection.col(3);
+        c = M.inverse() * projection_.col(3);
     }
     
     void Camera::setK(Mat3f& K) const {
-        if (m_txtType != 2) {
-            cerr << "gerK not supported for txtType" << m_txtType << endl;
+        if (param_type_ != 2) {
+            cerr << "gerK not supported for txtType" << param_type_ << endl;
             exit(1);
         }
         
         K = Mat3f::Zero();
-        K(0, 0) = m_intrinsics[0];
-        K(1, 1) = m_intrinsics[1];
-        K(0, 1) = m_intrinsics[2];
-        K(0, 2) = m_intrinsics[3];
-        K(1, 2) = m_intrinsics[4];
+        K(0, 0) = intrinsics_[0];
+        K(1, 1) = intrinsics_[1];
+        K(0, 1) = intrinsics_[2];
+        K(0, 2) = intrinsics_[3];
+        K(1, 2) = intrinsics_[4];
         K(2, 2) = 1.0f;
     }
     
     void Camera::setRt(Mat4f& Rt) const {
-        if (m_txtType != 2) {
-            cerr << "gerRT not supported for txtType: " << m_txtType << endl;
+        if (param_type_ != 2) {
+            cerr << "gerRT not supported for txtType: " << param_type_ << endl;
             exit(1);
         }
         
         float params[6];
         for (int i = 0; i < 6; ++i) {
-            params[i] = m_extrinsics[i];
+            params[i] = extrinsics_[i];
         }
         
         Mat4f Rttmp;
@@ -248,14 +269,14 @@ namespace open3DCV
     }
     
     void Camera::setR(Mat3f &R) const {
-        if (m_txtType != 2) {
-            cerr << "Not supported: " << m_txtType << endl;
+        if (param_type_ != 2) {
+            cerr << "Not supported: " << param_type_ << endl;
             exit(1);
         }
         
         float params[6];
         for (int i = 0; i < 6; ++i) {
-            params[i] = m_extrinsics[i];
+            params[i] = extrinsics_[i];
         }
         
         Mat4f Rttmp;
@@ -272,35 +293,35 @@ namespace open3DCV
     //void Camera::init(const string cname) {
     //    m_cname = cname;
     //
-    //    m_intrinsics.resize(6);
-    //    m_extrinsics.resize(6);
+    //    intrinsics_.resize(6);
+    //    extrinsics_.resize(6);
     //
     //    ifstream ifstr;
     //    ifstr.open(cname.c_str());
     //    string header;
     //    ifstr >> header;
     //    if (header == "CONTOUR")
-    //        m_txtType = 0;
+    //        param_type_ = 0;
     //    else if (header == "CONTOUR2")
-    //        m_txtType = 2;
+    //        param_type_ = 2;
     //    else if (header == "CONTOUR3")
-    //        m_txtType = 3;
+    //        param_type_ = 3;
     //    else {
     //        cerr << "Unrecognizable text format" << endl;
     //        exit(1);
     //    }
     //
     //    for (int i = 0; i < 6; ++i)
-    //        ifstr >> m_intrinsics[i];
+    //        ifstr >> intrinsics_[i];
     //    for (int i = 0; i < 6; ++i)
-    //        ifstr >> m_extrinsics[i];
+    //        ifstr >> extrinsics_[i];
     //
     //    ifstr.close();
     //
     //    // initialize projection matrices, CoP and various axes
-    //    m_projections.resize(maxLevel);
+    //    projection_s.resize(maxLevel);
     //    for (int level = 0; level < maxLevel; ++level) {
-    //        m_projections[level].resize(3, 4);
+    //        projection_s[level].resize(3, 4);
     //    }
     //    updateCamera();
     //}
@@ -308,21 +329,21 @@ namespace open3DCV
     //void Camera::updateCamera() {
     //    updateProjection();
     //
-    //    m_oaxis = m_projections[0].row(2);
-    //    m_oaxis /= m_oaxis.head(3).norm();
+    //    oaxis_ = projection_s[0].row(2);
+    //    oaxis_ /= oaxis_.head(3).norm();
     //
-    //    m_center = getCameraCenter();
+    //    center_ = getCameraCenter();
     //
-    //    m_zaxis = Vec3f(m_oaxis.head(3));
-    //    m_xaxis = Vec3f(m_projections[0].row(0).head(3));
-    //    m_yaxis = m_zaxis.cross(m_xaxis);
-    //    m_yaxis /= m_yaxis.norm();
-    //    m_xaxis = m_yaxis.cross(m_zaxis);
+    //    zaxis_ = Vec3f(oaxis_.head(3));
+    //    xaxis_ = Vec3f(projection_s[0].row(0).head(3));
+    //    yaxis_ = zaxis_.cross(xaxis_);
+    //    yaxis_ /= yaxis_.norm();
+    //    xaxis_ = yaxis_.cross(zaxis_);
     //
     //    // ??? the scale of the x,y-axis of the patch projected onto the image plane
-    //    Vec4f xaxis = m_projections[0].row(0);
+    //    Vec4f xaxis = projection_s[0].row(0);
     //    xaxis(3) = 0.0f;
-    //    Vec4f yaxis = m_projections[0].row(1);
+    //    Vec4f yaxis = projection_s[0].row(1);
     //    yaxis(3) = 0.0f;
     //    float scale = (xaxis.norm() + yaxis.norm()) / 2.0f;
     //    if (scale == 0.0f) {
@@ -333,12 +354,12 @@ namespace open3DCV
     
     //void Camera::updateProjection() {
     //    // set bottom level
-    //    setProjection(m_intrinsics, m_extrinsics, m_projections[0], m_txtType);
+    //    setProjection(intrinsics_, extrinsics_, projection_s[0], param_type_);
     //
     //    for (int level = 1; level < m_maxLevel; ++level) {
-    //        m_projections[level] = m_projections[level - 1];
-    //        m_projections[level].row(0) /= 2.0f;
-    //        m_projections[level].row(1) /= 2.0f;
+    //        projection_s[level] = projection_s[level - 1];
+    //        projection_s[level].row(0) /= 2.0f;
+    //        projection_s[level].row(1) /= 2.0f;
     //    }
     //}
     
@@ -452,25 +473,25 @@ namespace open3DCV
     //void Camera::writeCamera(const string file) {
     //    ofstream ofstr;
     //    ofstr.open(file.c_str());
-    //    if(m_txtType == 0) {
+    //    if(param_type_ == 0) {
     //        ofstr << "CONTOUR" << endl
-    //            << m_intrinsics[0] << ' ' << m_intrinsics[1] << ' '
-    //            << m_intrinsics[2] << ' ' << m_intrinsics[3] << endl
-    //            << m_intrinsics[4] << ' ' << m_intrinsics[5] << ' '
-    //            << m_extrinsics[0] << ' ' << m_extrinsics[1] << endl
-    //            << m_extrinsics[2] << ' ' << m_extrinsics[3] << ' '
-    //            << m_extrinsics[4] << ' ' << m_extrinsics[5] << endl;
+    //            << intrinsics_[0] << ' ' << intrinsics_[1] << ' '
+    //            << intrinsics_[2] << ' ' << intrinsics_[3] << endl
+    //            << intrinsics_[4] << ' ' << intrinsics_[5] << ' '
+    //            << extrinsics_[0] << ' ' << extrinsics_[1] << endl
+    //            << extrinsics_[2] << ' ' << extrinsics_[3] << ' '
+    //            << extrinsics_[4] << ' ' << extrinsics_[5] << endl;
     //    }
-    //    else if(m_txtType == 2) {
+    //    else if(param_type_ == 2) {
     //        ofstr << "CONTOUR2" << endl;
     //        for (int i = 0; i < 6; ++i)
-    //            ofstr << m_intrinsics[i] << ' ';
+    //            ofstr << intrinsics_[i] << ' ';
     //        ofstr << endl;
     //        for (int i = 0; i < 6; ++i)
-    //            ofstr << m_extrinsics[i] << ' ';
+    //            ofstr << extrinsics_[i] << ' ';
     //        ofstr << endl;
     //    }
-    //    else if(m_txtType == 3) {
+    //    else if(param_type_ == 3) {
     //        // to be written
     //    }
     //    else {
@@ -485,11 +506,11 @@ namespace open3DCV
     //    Vec4f center;
     //
     //    // orthographic camera
-    //    if(m_projections[0](2, 0) == 0.0f && m_projections[0](2, 1) == 0.0f && m_projections[0](2, 2) == 0.0f) {
+    //    if(projection_s[0](2, 0) == 0.0f && projection_s[0](2, 1) == 0.0f && projection_s[0](2, 2) == 0.0f) {
     //        // not yet implemented
     //    } else {
-    //        Mat3f M = m_projections[0].block(0, 0, 3, 3);
-    //        Vec3f q = m_projections[0].col(3);
+    //        Mat3f M = projection_s[0].block(0, 0, 3, 3);
+    //        Vec3f q = projection_s[0].col(3);
     //        Vec3f center3 = -M.inverse() * q;
     //        center << center3(0), center3(1), center3(2), 1.0f;
     //    }
@@ -497,7 +518,7 @@ namespace open3DCV
     //}
     
     Vec3f Camera::project(const Vec4f& coord) const {
-        Vec3f icoord = m_projection * coord;
+        Vec3f icoord = projection_ * coord;
         
         if(icoord(2) <= 0.0) {
             icoord << -0xffff, -0xffff, -1.0f; // probably need more bytes?
@@ -517,8 +538,8 @@ namespace open3DCV
     // seems not used
     Vec4f Camera::unproject(const Vec3f& icoord) const {
         Vec3f b(icoord); // the third element should store the depth info
-        Mat3f M = m_projection.block(0, 0, 3, 3);
-        Vec3f p = m_projection.col(3);
+        Mat3f M = projection_.block(0, 0, 3, 3);
+        Vec3f p = projection_.col(3);
         b = b - p;
         Vec4f coord = Vec4f::Ones();
         coord.head(3) = M.inverse() * b;
@@ -526,11 +547,11 @@ namespace open3DCV
     }
     
     float Camera::computeDepth(const Vec4f& coord) const {
-        if (m_projection(2, 0) == 0.0f && m_projection(2, 1) == 0.0f && m_projection(2, 2) == 0.0f) {
-            return -m_center.homogeneous().dot(coord);
+        if (projection_(2, 0) == 0.0f && projection_(2, 1) == 0.0f && projection_(2, 2) == 0.0f) {
+            return -center_.homogeneous().dot(coord);
         }
         else {
-            return m_oaxis.homogeneous().dot(coord);
+            return oaxis_.homogeneous().dot(coord);
         }
     }
     
@@ -542,11 +563,11 @@ namespace open3DCV
     //    }
     //    
     //    float scale;
-    //    if (m_projections[0](2, 0) == 0.0f && m_projections[0](2, 1) == 0.0f && m_projections[0](2, 2) == 0.0f) {
+    //    if (projection_s[0](2, 0) == 0.0f && projection_s[0](2, 1) == 0.0f && projection_s[0](2, 2) == 0.0f) {
     //        // for orthographic case
     //    }
     //    else {
-    //        Vec4f ray = coord - m_center;
+    //        Vec4f ray = coord - center_;
     //        scale = ray.norm() * (0x0001 << level) / m_ipscale;
     //    }
     //    return scale;
@@ -556,7 +577,7 @@ namespace open3DCV
     //    const float pscale = getScale(coord, level); // projection scale?
     //    
     //    Vec3f normal3(normal(0), normal(1), normal(2));
-    //    Vec3f yaxis3 = normal3.cross(m_xaxis);
+    //    Vec3f yaxis3 = normal3.cross(xaxis_);
     //    yaxis3 /= yaxis3.norm();
     //    Vec3f xaxis3 = yaxis3.cross(normal3);
     //    

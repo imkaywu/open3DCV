@@ -2,6 +2,7 @@
 #define plot_h_
 
 #include "image/image.h"
+#include "math/numeric.h"
 #include "matching/match.h"
 #include "keypoint/keypoint.h"
 
@@ -97,6 +98,12 @@ inline void draw_plus(Image& img, const Vec2i r_p, const int scale = 3)
     }
 }
     
+//inline void draw_plus(Image& img, const Vec2f r_p, const int scale = 3)
+//{
+//    Vec2i p = r_p.cast<int>();
+//    draw_plus(img, p, scale);
+//}
+
 inline void draw_plus(Image img, const vector<Keypoint>& keys, const string oname, const int scale = 3)
 {
     for (int i = 0; i < keys.size(); ++i)
@@ -139,6 +146,12 @@ inline void draw_cross(Image& img, const Vec2i r_p, const int scale = 3)
         }
     }
 }
+    
+//inline void draw_cross(Image& img, const Vec2f r_p, const int scale = 3)
+//{
+//    Vec2f p = r_p.cast<int>();
+//    draw_cross(img, p, scale);
+//}
 
 inline void draw_cross(Image img, const vector<Keypoint>& keys, const string oname, const int scale = 3)
 {
@@ -186,6 +199,31 @@ inline Vec3f pt2slope(const T x1, const T x2)
     slope(2) = -(x1(0) + slope(1) * x1(1));
     
     return slope;
+}
+    
+inline void draw_epipolar_geometry(Image img1, Image img2, const Mat3f& F, const vector<std::pair<Vec2f, Vec2f> >& matches, const string& oname)
+{
+    Mat3f Ftmp = F;
+    Mat3f Ft = F.transpose().eval();
+    Vec3f e1, e2, slope;
+    nullspace<Mat3f, Vec3f>(&Ftmp, &e1);
+    nullspace<Mat3f, Vec3f>(&Ft, &e2);
+    e1 = e1.array() / e1(2);
+    e2 = e2.array() / e2(2);
+    
+    for (int i = 0; i < matches.size(); ++i)
+    {
+        slope = pt2slope<Vec2f>(matches[i].first, e1.block<2, 1>(0, 0));
+        draw_line(img1, slope);
+        slope = F * matches[i].first.homogeneous();
+        draw_line(img2, slope);
+    }
+    Image img;
+    img.combine_images(img1, img2);
+    if (img.channel() == 1)
+        img.write(oname + ".pgm");
+    else
+        img.write(oname + ".jpg");
 }
 
 }

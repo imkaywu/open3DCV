@@ -11,17 +11,17 @@ using std::endl;
 namespace open3DCV {
     static const int kMaXScaledDim = 3600;
     
-    Sift::Sift()
+    Sift::Sift() : data_(nullptr), sift_filter_(nullptr)
     {
         type_ = SIFT;
     }
     
-    Sift::Sift(const Sift_Params& sift_params) : sift_params_(sift_params)
+    Sift::Sift(const Sift_Params& sift_params) : sift_params_(sift_params), data_(nullptr), sift_filter_(nullptr)
     {
-        // no-op
+        type_ = SIFT;
     }
     
-    Sift::Sift(Image& image)
+    Sift::Sift(Image& image) : data_(nullptr), sift_filter_(nullptr)
     {
         type_ = SIFT;
         convert(image);
@@ -82,7 +82,6 @@ namespace open3DCV {
     
     int Sift::detect_keypoints(const Image& image, vector<Keypoint> &keypoints, int verbose)
     {
-        
         if (sift_filter_ == nullptr || (sift_filter_->width != image.width() ||
                                         sift_filter_->height != image.height()))
         {
