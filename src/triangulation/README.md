@@ -1,2 +1,2 @@
-1. transform/: from theia
-2. transform.cpp, transform.h: from sfmLibrary
+1. triangulation: from theia
+2. transform.cpp, transform.h: from SfMLibrary

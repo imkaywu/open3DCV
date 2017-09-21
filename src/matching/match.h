@@ -1,6 +1,7 @@
 #ifndef match_h_
 #define match_h_
 
+// replaced by DMatch
 namespace open3DCV
 {
     class Match

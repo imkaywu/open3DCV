@@ -189,6 +189,11 @@ namespace open3DCV
         return 0;
     }
     
+    Vec3f Camera::pixel2ray(const Vec2f& pixel) const
+    {
+        return Vec3f(pixel.x(), pixel.y(), -intrinsics_[0]);
+    }
+    
     Vec3f Camera::project(const Vec4f& coord) const {
         Vec3f icoord = projection_ * coord;
         

@@ -35,6 +35,7 @@ public:
     const Vec3f& center() const;
     Vec3f& center();
     
+    Vec3f pixel2ray(const Vec2f& pixel) const;
     Vec3f project(const Vec4f& coord) const;
     Vec4f unproject(const Vec3f& icoord) const;
     float compute_depth(const Vec4f& coord) const;
