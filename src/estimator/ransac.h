@@ -21,7 +21,8 @@ public:
     static float estimate(Param_Estimator<T, S>* param_estimator,
                           std::vector<T>& data,
                           std::vector<S>& params,
-                          float prob_wo_outliers);
+                          float prob_wo_outliers,
+                          int* vote_inlier);
     
 private:
     

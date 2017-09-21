@@ -8,8 +8,7 @@
 
 namespace open3DCV
 {
-    
-// r_p: (x, y)
+
 inline void draw_line(Image& img, Vec2i r_p1, Vec2i r_p2)
 {
     int dx, dy, temp;
@@ -97,12 +96,6 @@ inline void draw_plus(Image& img, const Vec2i r_p, const int scale = 3)
         }
     }
 }
-    
-//inline void draw_plus(Image& img, const Vec2f r_p, const int scale = 3)
-//{
-//    Vec2i p = r_p.cast<int>();
-//    draw_plus(img, p, scale);
-//}
 
 inline void draw_plus(Image img, const vector<Keypoint>& keys, const string oname, const int scale = 3)
 {
@@ -146,12 +139,6 @@ inline void draw_cross(Image& img, const Vec2i r_p, const int scale = 3)
         }
     }
 }
-    
-//inline void draw_cross(Image& img, const Vec2f r_p, const int scale = 3)
-//{
-//    Vec2f p = r_p.cast<int>();
-//    draw_cross(img, p, scale);
-//}
 
 inline void draw_cross(Image img, const vector<Keypoint>& keys, const string oname, const int scale = 3)
 {
@@ -211,10 +198,13 @@ inline void draw_epipolar_geometry(Image img1, Image img2, const Mat3f& F, const
     e1 = e1.array() / e1(2);
     e2 = e2.array() / e2(2);
     
-    for (int i = 0; i < matches.size(); ++i)
+    for (int i = 0; i < std::min(30, (int)matches.size()); ++i)
     {
-        slope = pt2slope<Vec2f>(matches[i].first, e1.block<2, 1>(0, 0));
+        draw_cross(img1, matches[i].first.cast<int>());
+//        slope = pt2slope<Vec2f>(matches[i].first, e1.block<2, 1>(0, 0));
+        slope = Ft * matches[i].second.homogeneous();
         draw_line(img1, slope);
+        draw_cross(img2, matches[i].second.cast<int>());
         slope = F * matches[i].first.homogeneous();
         draw_line(img2, slope);
     }

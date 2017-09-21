@@ -185,6 +185,14 @@ namespace open3DCV {
         pt_triangulated = X.block<3, 1>(0, 0).array() / X(3);
     }
     
+    void triangulate_nonlinaer(vector<Mat34f>& poses, const vector<vector<Vec2f> >& pts, vector<Vec3f>& pts3d)
+    {
+        for (int i = 0; i < pts.size(); ++i)
+        {
+            triangulate_nonlinear(poses, pts[i], pts3d[i]);
+        }
+    }
+    
     void residule(const Vec3f& pt3d, const vector<Vec2f>& pts, const vector<Mat34f>& Q, Vecf& e, Matf& J)
     {
         int sz = static_cast<int>(pts.size());

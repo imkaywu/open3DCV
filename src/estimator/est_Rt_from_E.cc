@@ -1,5 +1,6 @@
-#include "Eigen/SVD"
-#include "est_Rt_from_E.h"
+#include "math/numeric.h"
+#include "estimator/est_Rt_from_E.h"
+#include "transform/projection.h"
 #include "triangulation/triangulation.h"
 
 using std::vector;
@@ -22,19 +23,19 @@ namespace open3DCV
             -1,  0, 0,
              0,  0, 0;
         
-        // translation vector (skew-symmetric)
+        // skew-symmetric matrix (translation vector)
         Mat3f S;
         S = U * Z * U.transpose();
-        
-        // two possible rotation matrices
-        R.resize(2);
-        R[0] = U * W * V.transpose();
-        R[1] = U * W.transpose() * V.transpose();
         
         // two possible translation vectors
         t.resize(2);
         t[0] = U.block<3, 1>(0, 2);
         t[1] = -U.block<3, 1>(0, 2);
+        
+        // two possible rotation matrices
+        R.resize(2);
+        R[0] = U * W * V.transpose();
+        R[1] = U * W.transpose() * V.transpose();
         
         // check determinant
         if(R[0].determinant() < 0)
@@ -47,13 +48,13 @@ namespace open3DCV
         }
     }
     
-    void Rt_from_E(const Mat3f& E, Mat3f& R, Vec3f& t)
+    void Rt_from_E(Graph& graph)
     {
+        Mat3f E = graph.E_;
         vector<Mat3f> Rs(2);
         vector<Vec3f> ts(2);
-        rt_from_e(E, Rs, ts);
+        Rt_from_E(E, Rs, ts);
         
-        // four possible solutions
         vector<Mat34f> Rts(4);
         for (int i = 0; i < Rs.size(); ++i)
             for (int j = 0; j < ts.size(); ++j)
@@ -62,36 +63,38 @@ namespace open3DCV
                 Rts[i * ts.size() + j].block<3, 1>(0, 3) = ts[j];
             }
         
-        // ???
-        Mat3f K;
-        vector<Vec2f> pts;
-        Vec3f pt_triangulated;
-        
-        // triangulation
         vector<Mat34f> poses(2);
-        poses[0].block<3, 3>(0, 0) = K;
-        poses[0].block<3, 1>(0, 3) = Vec3f::Zero();
+        poses[0].block<3, 3>(0, 0) = Mat3f::Identity();
+        poses[0].block<3, 1>(0, 3).setZero();
         
-        vector<int> good_count(4);
+        const int nmatches = static_cast<int>(graph.matches_.size());
+        vector<vector<Vec2f> > pts_matching(nmatches, vector<Vec2f>());
+        vector<Vec3f> pts3d(nmatches);
+        for (int i = 0; i < nmatches; ++i)
+        {
+            pts_matching[i][0] = graph.keys_[graph.matches_[i].ikey1_].coords();
+            pts_matching[i][1] = graph.keys_[graph.matches_[i].ikey2_].coords();
+        }
+        
+        vector<int> count(4);
         for (int i = 0; i < 4; ++i)
         {
-            poses[1] = K * Rts[i];
-            triangulate_nonlinear(poses, pts, pt_triangulated);
+            poses[1] = graph.K_[1] * Rts[i];
+            triangulate_nonlinear(poses, pts_matching, pts3d);
             
-            good_count[i] = 0;
-            for (int j = 0; j < pts.size(); ++j)
+            count[i] = 0;
+            for (int j = 0; j < nmatches; ++j)
             {
-                float d = Rts[i].block<1, 3>(2, 0) * (pt_triangulated - ts[i]);
-                if (pt_triangulated(2) > 0 && d > 0)
-                {
-                    ++good_count[i];
-                }
+                float d = Rts[i].block<1, 3>(2, 0) * (pts3d[i] - Rts[i].block<3, 1>(0, 3));
+                if (pts3d[i](2) > 0 && d > 0)
+                    ++count[i];
             }
         }
         
         vector<size_t> idx;
-        idx = sort_indexes(good_count);
-        R = Rts[idx[0]].block<3, 3>(0, 0);
-        t = Rts[idx[0]].block<3, 1>(0, 3);
+        idx = sort_indexes(count);
+        graph.Rt_[1].block<3, 3>(0, 0) = Rts[idx[0]].block<3, 3>(0, 0);
+        graph.Rt_[1].block<3, 1>(0, 3) = Rts[idx[0]].block<3, 1>(0, 3);
     }
+    
 }

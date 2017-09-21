@@ -12,7 +12,8 @@ template<class T, class S>
 float Ransac<T, S>::estimate(Param_Estimator<T, S>* param_estimator,
                              vector<T>& data,
                              vector<S>& params,
-                             float prob_wo_outliers)
+                             float prob_wo_outliers,
+                             int* vote_inlier)
 {
     unsigned int ndata = static_cast<unsigned int>(data.size());
     unsigned int ndata_min = param_estimator->ndata();
@@ -147,6 +148,7 @@ float Ransac<T, S>::estimate(Param_Estimator<T, S>* param_estimator,
     {
         for (j = 0; j < ndata; ++j)
         {
+            vote_inlier[j] = vote_best[j];
             if (vote_best[j])
                 ls_est_data.push_back(data[j]);
         }

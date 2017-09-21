@@ -12,19 +12,20 @@ using std::vector;
 namespace open3DCV {
     
     // DLT
-    void triangulate_linear(const vector<Mat34f>& poses, const vector<Vec2f>& pts, Vec3f& pt_triangulated);
-    void triangulate_linear(const vector<Camera>& cameras, const vector<Keypoint>& keys, Vec3f& pt_triangulated);
+    void triangulate_linear(const vector<Mat34f>& poses, const vector<Vec2f>& pts, Vec3f& pt3d);
+    void triangulate_linear(const vector<Camera>& cameras, const vector<Keypoint>& keys, Vec3f& pt3d);
     void triangulate_linear(const vector<Camera>& cameras, const Track& track, Structure_Point& structure_point);
     void triangulate_linear(const vector<Camera>& cameras, Graph& graph);
     
     // mid-point algorithm
-    void triangulate_midpoint(const vector<Vec3f>& centers, const vector<Vec3f>& directions, const vector<Vec2f>& pts, Vec3f& pt_triangulated);
-    void triangulate_midpoint(const vector<Camera>& cameras, const vector<Keypoint>& keys, Vec3f& pt_triangulated);
+    void triangulate_midpoint(const vector<Vec3f>& centers, const vector<Vec3f>& directions, const vector<Vec2f>& pts, Vec3f& pt3d);
+    void triangulate_midpoint(const vector<Camera>& cameras, const vector<Keypoint>& keys, Vec3f& pt3d);
     void triangulate_midpoint(const vector<Camera>& cameras, const Track& track, Structure_Point& structure_point);
     
     // minimizing the sampsen error
-    void triangulate_nonlinear(const vector<Mat34f>& poses, const vector<Vec2f>& pts, Vec3f& pt_triangulated);
-    void triangulate_nonlinear(const vector<Camera>& cameras, const vector<Keypoint>& keys, Vec3f& pt_triangulated);
+    void triangulate_nonlinear(const vector<Mat34f>& poses, const vector<Vec2f>& pts, Vec3f& pt3d);
+    void triangulate_nonlinear(const vector<Mat34f>& poses, const vector<vector<Vec2f> >& pts, vector<Vec3f>& pts3d);
+    void triangulate_nonlinear(const vector<Camera>& cameras, const vector<Keypoint>& keys, Vec3f& pt3d);
     void triangulate_nonlinear(const vector<Camera>& cameras, const Track& track, Structure_Point& structure_point);
     void residule(const Vec3f& pt3d, const vector<Vec2f>& pts, const vector<Mat34f>& Q, Vecf& e, Matf& J);
     

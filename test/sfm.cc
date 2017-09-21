@@ -46,7 +46,7 @@ int main(const int argc, const char** argv)
     }
     
     // feature matching
-    Matcher_Param matcher_param(0.6, 128, 10, 3);
+    Matcher_Param matcher_param(0.3, 128, 10, 3);
     Matcher_Flann matcher(matcher_param);
     vector<vector<Match> > matches(nimages - 1, vector<Match>());
     for (int i = 0; i < nimages - 1; ++i)
@@ -72,8 +72,23 @@ int main(const int argc, const char** argv)
             data.push_back(pair_data);
         }
         vector<float> params(9);
+        int* vote_inlier = new int[data.size()];
         Param_Estimator<std::pair<Vec2f, Vec2f>, float>* fund_esti = new open3DCV::Fundamental_Estimator(0.2f);
-        Ransac<std::pair<Vec2f, Vec2f>, float>::estimate(fund_esti, data, params, 0.99);
+        float ratio_inlier = Ransac<std::pair<Vec2f, Vec2f>, float>::estimate(fund_esti, data, params, 0.99, vote_inlier);
+        std::cout << "ratio of inliers: " << ratio_inlier << std::endl;
+        
+        vector<Match> matches_inlier;
+        vector<std::pair<Vec2f, Vec2f> > data_inlier;
+        for (int j = 0; j < matches[i].size(); ++j)
+        {
+            if (vote_inlier[j])
+            {
+                matches_inlier.push_back(matches[i][j]);
+                data_inlier.push_back(data[j]);
+            }
+
+        }
+        draw_matches(images[i], keys[i], images[i+1], keys[i+1], matches_inlier, "matching_inlier"+to_string(i+1)+"_"+to_string(i+2));
         
         Mat3f F;
         F << params[0], params[3], params[6],
@@ -83,7 +98,7 @@ int main(const int argc, const char** argv)
         // visualize epipolar geometry
         if (is_vis)
         {
-            draw_epipolar_geometry(images[i], images[i+1], F, data, "epipolar"+to_string(i+1)+"_"+to_string(i+2));
+            draw_epipolar_geometry(images[i], images[i+1], F, data_inlier, "epipolar"+to_string(i+1)+"_"+to_string(i+2));
         }
         data.clear();
     }
