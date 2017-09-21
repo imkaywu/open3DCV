@@ -7,7 +7,7 @@ using Eigen::JacobiSVD;
 
 namespace open3DCV
 {
-    void rt_from_e(const Mat3f& E, vector<Mat3f>& R, vector<Vec3f>& t)
+    void Rt_from_E(const Mat3f& E, vector<Mat3f>& R, vector<Vec3f>& t)
     {
         JacobiSVD<Eigen::Matrix<float, 3, 3> > ematrix_svd(E, Eigen::ComputeFullU | Eigen::ComputeFullV);
         Mat3f U, V;
@@ -47,51 +47,51 @@ namespace open3DCV
         }
     }
     
-//    void rt_from_e(const Mat3f& E, Mat3f& R, Vec3f& t)
-//    {
-//        vector<Mat3f> Rs(2);
-//        vector<Vec3f> ts(2);
-//        rt_from_e(E, Rs, ts);
-//        
-//        // four possible solutions
-//        vector<Mat34f> Rts(4);
-//        for (int i = 0; i < Rs.size(); ++i)
-//            for (int j = 0; j < ts.size(); ++j)
-//            {
-//                Rts[i * ts.size() + j].block<3, 3>(0, 0) = Rs[i];
-//                Rts[i * ts.size() + j].block<3, 1>(0, 3) = ts[j];
-//            }
-//        
-//        // ???
-//        Mat3f K;
-//        vector<Vec2f> pts;
-//        Vec3f pt_triangulated;
-//        
-//        // triangulation
-//        vector<Mat34f> poses(2);
-//        poses[0].block<3, 3>(0, 0) = K;
-//        poses[0].block<3, 1>(0, 3) = Vec3f::Zero();
-//        
-//        vector<int> good_count(4);
-//        for (int i = 0; i < 4; ++i)
-//        {
-//            poses[1] = K * Rts[i];
-//            triangulate_nonlinear(poses, pts, pt_triangulated);
-//            
-//            good_count[i] = 0;
-//            for (int j = 0; j < pts.size(); ++j)
-//            {
-//                float d = Rts[i].block<1, 3>(2, 0) * (pt_triangulated - ts[i]);
-//                if (pt_triangulated(2) > 0 && d > 0)
-//                {
-//                    ++good_count[i];
-//                }
-//            }
-//        }
-//        
-//        vector<size_t> idx;
-//        idx = sort_indexes(good_count);
-//        R = Rts[idx[0]].block<3, 3>(0, 0);
-//        t = Rts[idx[0]].block<3, 1>(0, 3);
-//    }
+    void Rt_from_E(const Mat3f& E, Mat3f& R, Vec3f& t)
+    {
+        vector<Mat3f> Rs(2);
+        vector<Vec3f> ts(2);
+        rt_from_e(E, Rs, ts);
+        
+        // four possible solutions
+        vector<Mat34f> Rts(4);
+        for (int i = 0; i < Rs.size(); ++i)
+            for (int j = 0; j < ts.size(); ++j)
+            {
+                Rts[i * ts.size() + j].block<3, 3>(0, 0) = Rs[i];
+                Rts[i * ts.size() + j].block<3, 1>(0, 3) = ts[j];
+            }
+        
+        // ???
+        Mat3f K;
+        vector<Vec2f> pts;
+        Vec3f pt_triangulated;
+        
+        // triangulation
+        vector<Mat34f> poses(2);
+        poses[0].block<3, 3>(0, 0) = K;
+        poses[0].block<3, 1>(0, 3) = Vec3f::Zero();
+        
+        vector<int> good_count(4);
+        for (int i = 0; i < 4; ++i)
+        {
+            poses[1] = K * Rts[i];
+            triangulate_nonlinear(poses, pts, pt_triangulated);
+            
+            good_count[i] = 0;
+            for (int j = 0; j < pts.size(); ++j)
+            {
+                float d = Rts[i].block<1, 3>(2, 0) * (pt_triangulated - ts[i]);
+                if (pt_triangulated(2) > 0 && d > 0)
+                {
+                    ++good_count[i];
+                }
+            }
+        }
+        
+        vector<size_t> idx;
+        idx = sort_indexes(good_count);
+        R = Rts[idx[0]].block<3, 3>(0, 0);
+        t = Rts[idx[0]].block<3, 1>(0, 3);
+    }
 }

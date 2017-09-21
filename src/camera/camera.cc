@@ -9,6 +9,7 @@
 #include "camera/camera.h"
 #include "math/numeric.h"
 #include "transform/rodrigues.h"
+#include "transform/projection.h"
 #include <fstream>
 #include <climits>
 
@@ -61,8 +62,7 @@ namespace open3DCV
     
     void Camera::update_projection()
     {
-        projection_.block<3, 3>(0, 0) = K_ * R_;
-        projection_.block<3, 1>(0, 3) = K_ * t_;
+        P_from_KRt(K_, R_, t_, projection_);
     }
     
     void Camera::update_parameters()
@@ -88,7 +88,7 @@ namespace open3DCV
         // from projection to parameters
         if (is_proj)
         {
-            KRt_from_P();
+            KRt_from_P(projection_, K_, R_, t_);
         }
         else
         {
@@ -133,16 +133,6 @@ namespace open3DCV
         yaxis_ = zaxis_.cross(xaxis_);
         yaxis_ /= yaxis_.norm();
         xaxis_ = yaxis_.cross(zaxis_);
-    }
-    
-    void Camera::P_from_KRt()
-    {
-        
-    }
-    
-    void Camera::KRt_from_P()
-    {
-        
     }
     
     const Mat34f& Camera::projection() const

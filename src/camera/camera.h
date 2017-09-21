@@ -22,8 +22,6 @@ public:
     void update_matrices(const int is_proj = 1);
     void update_center();
     void update_axes();
-    void P_from_KRt();
-    void KRt_from_P();
     
     int decompose(Mat3f & K, Mat3f& R) const;
 
