@@ -3,7 +3,7 @@
 
 #include "image/image.h"
 #include "math/numeric.h"
-#include "matching/match.h"
+#include "matching/dmatch.h"
 #include "keypoint/keypoint.h"
 
 namespace open3DCV
@@ -131,11 +131,17 @@ inline void draw_cross(Image& img, const Vec2i r_p, const int scale = 3)
         {
             ind = (r_p(1) + i) * img.width() + r_p(0) + i;
             if (img.in_image(ind))
-                img.m_image[3 * ind + 0] = img.m_image[3 * ind + 1] = img.m_image[3 * ind + 2] = 255;
+            {
+                img.m_image[3 * ind + 0] = 255;
+                img.m_image[3 * ind + 1] = img.m_image[3 * ind + 2] = 0;
+            }
             
             ind = (r_p(1) + i) * img.width() + r_p(0) - i;
             if (img.in_image(ind))
-                img.m_image[3 * ind + 0] = img.m_image[3 * ind + 1] = img.m_image[3 * ind + 2] = 255;
+            {
+                img.m_image[3 * ind + 0] = img.m_image[3 * ind + 1] = 255;
+                img.m_image[3 * ind + 1] = img.m_image[3 * ind + 2] = 0;
+            }
         }
     }
 }
@@ -152,7 +158,7 @@ inline void draw_cross(Image img, const vector<Keypoint>& keys, const string ona
         img.write(oname + ".jpg");
 }
 
-inline void draw_matches(const Image& img0, const vector<Keypoint> keys0, const Image& img1, const vector<Keypoint> keys1, vector<Match>& matches, const string oname)
+inline void draw_matches(const Image& img0, const vector<Keypoint> keys0, const Image& img1, const vector<Keypoint> keys1, vector<DMatch>& matches, const string oname)
 {
     Image img;
     img.combine_images(img0, img1);

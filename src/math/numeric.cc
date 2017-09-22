@@ -8,8 +8,8 @@ namespace open3DCV {
 Mat3f CrossProductMatrix(const Vec3f &x) {
     Mat3f X;
     X << 0, -x(2),  x(1),
-      x(2),     0, -x(0),
-     -x(1),  x(0),     0;
+         x(2),     0, -x(0),
+        -x(1),  x(0),     0;
     return X;
 }
 

@@ -48,9 +48,9 @@ namespace open3DCV
         }
     }
     
-    void Rt_from_E(Graph& graph)
+    void Rt_from_E(Pair& pair)
     {
-        Mat3f E = graph.E_;
+        Mat3f E = pair.E_;
         vector<Mat3f> Rs(2);
         vector<Vec3f> ts(2);
         Rt_from_E(E, Rs, ts);
@@ -64,37 +64,30 @@ namespace open3DCV
             }
         
         vector<Mat34f> poses(2);
-        poses[0].block<3, 3>(0, 0) = Mat3f::Identity();
+        poses[0].block<3, 3>(0, 0) = pair.K_[0] * Mat3f::Identity();
         poses[0].block<3, 1>(0, 3).setZero();
         
-        const int nmatches = static_cast<int>(graph.matches_.size());
-        vector<vector<Vec2f> > pts_matching(nmatches, vector<Vec2f>());
+        const int nmatches = static_cast<int>(pair.matches_.size());
         vector<Vec3f> pts3d(nmatches);
-        for (int i = 0; i < nmatches; ++i)
-        {
-            pts_matching[i][0] = graph.keys_[graph.matches_[i].ikey1_].coords();
-            pts_matching[i][1] = graph.keys_[graph.matches_[i].ikey2_].coords();
-        }
         
         vector<int> count(4);
         for (int i = 0; i < 4; ++i)
         {
-            poses[1] = graph.K_[1] * Rts[i];
-            triangulate_nonlinear(poses, pts_matching, pts3d);
+            poses[1] = pair.K_[1] * Rts[i];
+            triangulate_nonlinear(poses, pair.matches_, pts3d);
             
             count[i] = 0;
             for (int j = 0; j < nmatches; ++j)
             {
-                float d = Rts[i].block<1, 3>(2, 0) * (pts3d[i] - Rts[i].block<3, 1>(0, 3));
-                if (pts3d[i](2) > 0 && d > 0)
+                float d = Rts[i].block<1, 3>(2, 0) * (pts3d[j] - Rts[i].block<3, 1>(0, 3));
+                if (pts3d[j](2) > 0 && d > 0)
                     ++count[i];
             }
         }
         
         vector<size_t> idx;
         idx = sort_indexes(count);
-        graph.Rt_[1].block<3, 3>(0, 0) = Rts[idx[0]].block<3, 3>(0, 0);
-        graph.Rt_[1].block<3, 1>(0, 3) = Rts[idx[0]].block<3, 1>(0, 3);
+        pair.Rt_[1] = Rts[idx[0]];
     }
     
 }

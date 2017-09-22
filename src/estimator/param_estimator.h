@@ -20,7 +20,7 @@ class Param_Estimator
 {
 public:
     
-    Param_Estimator(unsigned int min_ndata, unsigned int nparam) : min_ndata_(min_ndata), nparam_(nparam) { }
+    Param_Estimator(unsigned int ndata_min, unsigned int nparam) : ndata_min_(ndata_min), nparam_(nparam) { }
     
     virtual void estimate(vector<T>& data, vector<S>& params) = 0;
     
@@ -28,13 +28,13 @@ public:
     
     virtual int check_inliers(T& data, vector<S>& params) = 0;
     
-    unsigned int ndata() const { return min_ndata_; }
+    unsigned int ndata() const { return ndata_min_; }
     
     unsigned int nparam() const { return nparam_; }
     
 private:
     
-    unsigned int min_ndata_;
+    unsigned int ndata_min_;
     unsigned int nparam_;
 };
 

@@ -24,9 +24,9 @@ namespace open3DCV {
     // The only two members that must be set are coords_, and keypoint_type_
     class Keypoint {
     public:
-        Keypoint(const Vec2f &r_x, KeypointType &r_t);
-        Keypoint(const Vec2f &r_x, KeypointType &r_t, unsigned int r_i);
-        Keypoint(const Vec2f &r_x, KeypointType &r_t, unsigned int r_i, const Vec3i &r_c);
+        Keypoint(const Vec2f &r_x);
+        Keypoint(const Vec2f &r_x, unsigned int r_i);
+        Keypoint(const Vec2f &r_x, unsigned int r_i, const Vec3i &r_c);
         Keypoint(const Vec2f &r_x, const float r_s, const float r_o);
         virtual ~Keypoint() { };
         
@@ -49,23 +49,24 @@ namespace open3DCV {
         Vec2f coords_;                       // coordinates
         unsigned int index_;                // Image index
         Vec3i color_;                       // color
-        KeypointType keypoint_type_;
         double scale_;
         double orientation_;
+        KeypointType keypoint_type_;
+
         
     };
     
-    inline Keypoint::Keypoint(const Vec2f &r_coords, KeypointType &r_t) : coords_(r_coords), keypoint_type_(r_t), scale_(open3DCV_KEYPOINT_VAR), orientation_(open3DCV_KEYPOINT_VAR), index_(open3DCV_KEYPOINT_VAR), color_(0,0,0)
+    inline Keypoint::Keypoint(const Vec2f &r_coords) : coords_(r_coords), scale_(open3DCV_KEYPOINT_VAR), orientation_(open3DCV_KEYPOINT_VAR), index_(open3DCV_KEYPOINT_VAR), color_(0,0,0)
     {
         //no-op
     }
     
-    inline Keypoint::Keypoint(const Vec2f &r_coords, KeypointType &r_t, unsigned int r_i) : coords_(r_coords), keypoint_type_(r_t), scale_(open3DCV_KEYPOINT_VAR), orientation_(open3DCV_KEYPOINT_VAR), index_(r_i), color_(0,0,0)
+    inline Keypoint::Keypoint(const Vec2f &r_coords, unsigned int r_i) : coords_(r_coords), scale_(open3DCV_KEYPOINT_VAR), orientation_(open3DCV_KEYPOINT_VAR), index_(r_i), color_(0,0,0)
     {
         //no-op
     }
     
-    inline Keypoint::Keypoint(const Vec2f &r_coords, KeypointType &r_t, unsigned int r_i, const Vec3i& r_c) : coords_(r_coords), keypoint_type_(r_t), scale_(open3DCV_KEYPOINT_VAR), orientation_(open3DCV_KEYPOINT_VAR), index_(r_i), color_(r_c)
+    inline Keypoint::Keypoint(const Vec2f &r_coords, unsigned int r_i, const Vec3i& r_c) : coords_(r_coords), scale_(open3DCV_KEYPOINT_VAR), orientation_(open3DCV_KEYPOINT_VAR), index_(r_i), color_(r_c)
     {
         //no-op
     }

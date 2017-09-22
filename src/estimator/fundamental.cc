@@ -1,6 +1,4 @@
 #include "estimator/fundamental.h"
-#include "Eigen/SVD"
-#include "Eigen/LU"
 #include "RpolyPlusPlus/find_polynomial_roots_jenkins_traub.h"
 
 using std::vector;
@@ -9,7 +7,7 @@ using Eigen::JacobiSVD;
 
 namespace open3DCV
 {
-Fundamental_Estimator::Fundamental_Estimator() : Param_Estimator<pair<Vec2f, Vec2f>, float>(7, 9), error_thresh_(0.1)
+Fundamental_Estimator::Fundamental_Estimator() : Param_Estimator<pair<Vec2f, Vec2f>, float>(7, 9), error_thresh_(0.05)
 {
     // no-opt
 }
@@ -28,14 +26,27 @@ void Fundamental_Estimator::estimate(vector<pair<Vec2f, Vec2f> >& data, vector<f
         x2[i] = data[i].second;
     }
     
-    vector<Mat3f> F;
-    fund_seven_pts(x1, x2, F);
-    params.resize(F.size() * nparam());
-    for (int i = 0; i < F.size(); ++i)
-        for (int j = 0; j < nparam(); ++j)
+    if (ndata() == 7)
+    {
+        vector<Mat3f> F;
+        fund_seven_pts(x1, x2, F);
+        params.resize(F.size() * nparam());
+        for (int i = 0; i < F.size(); ++i)
+            for (int j = 0; j < nparam(); ++j)
+            {
+                params[i * nparam() + j] = F[i](j);
+            }
+    }
+    else if (ndata() == 8)
+    {
+        Mat3f F;
+        fund_eight_pts(x1, x2, F);
+        params.resize(nparam());
+        for (int i = 0; i < nparam(); ++i)
         {
-            params[i * nparam() + j] = F[i](j);
+            params[i] = F(i);
         }
+    }
 }
 
 void Fundamental_Estimator::ls_estimate(vector<pair<Vec2f, Vec2f> >& data, vector<float>& params)
@@ -54,7 +65,7 @@ void Fundamental_Estimator::ls_estimate(vector<pair<Vec2f, Vec2f> >& data, vecto
         params[i] = F(i); // column first
     }
 }
-    
+
 int Fundamental_Estimator::check_inliers(std::pair<Vec2f, Vec2f>& data, vector<float>& params)
 {
     Mat3f F;

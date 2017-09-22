@@ -13,28 +13,34 @@ namespace open3DCV
         void add_keypoint(const Keypoint &k);
         void rm_keypoint(unsigned int index);
         const Keypoint &operator[](unsigned int index) const;
+//        const std::vector<Keypoint>& keypoints() const;
         unsigned int size() const; // length of the feature track
         
     protected:
-        std::vector<Keypoint> keypoints; // the collection of keypoints
+        std::vector<Keypoint> keys; // the collection of keypoints
         
     };
     
     inline void Track::add_keypoint(const Keypoint &k) {
-        keypoints.push_back(k);
+        keys.push_back(k);
     }
     
     inline void Track::rm_keypoint(unsigned int index) {
-        keypoints.erase(keypoints.begin() + index);
+        keys.erase(keys.begin() + index);
     }
     
     inline const Keypoint &Track::operator [](unsigned int index) const {
-        return keypoints[index];
+        return keys[index];
     }
     
     inline unsigned int Track::size() const {
-        return static_cast<unsigned int>(keypoints.size());
+        return static_cast<unsigned int>(keys.size());
     }
+    
+//    inline const std::vector<Keypoint>& Track::keypoints() const
+//    {
+//        return keys;
+//    }
 }
 
 #endif // track_h_

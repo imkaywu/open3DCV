@@ -3,8 +3,12 @@
 #include "camera/camera.h"
 #include "keypoint/sift.h"
 #include "matching/matcher_flann.h"
+#include "matching/pair.h"
 #include "estimator/fundamental.h"
 #include "estimator/ransac.h"
+#include "estimator/est_Rt_from_E.h"
+#include "triangulation/triangulation.h"
+#include "sfm/graph.h"
 #include "viz/plot.h"
 
 using namespace std;
@@ -15,7 +19,7 @@ int main(const int argc, const char** argv)
     string idir = "/Users/BlacKay/Documents/Projects/Images/test/bust/";
     bool is_vis = true;
     
-    // read images
+    // ------------------------------------------------- read images
     const int nimages = 5;
     vector<string> inames(nimages);
     inames[0] = idir + "B21.jpg";
@@ -29,7 +33,7 @@ int main(const int argc, const char** argv)
         images[i].read(inames[i]);
     }
     
-    // feature detection, descriptor extraction
+    // ------------------------------------------------- feature detection, descriptor extraction
     Sift_Params sift_param(3, 3, 0, 10.0f / 255.0, 0, -INFINITY, 3, 2);
     Sift sift(sift_param);
     vector<vector<Keypoint> > keys(nimages, vector<Keypoint>());
@@ -39,27 +43,28 @@ int main(const int argc, const char** argv)
         sift.detect_keypoints(images[i], keys[i], 0);
         sift.extract_descriptors(images[i], keys[i], descs[i]);
         sift.clear();
-        if (is_vis)
+        if (/* DISABLES CODE */ (false))
         {
             draw_cross(images[i], keys[i], "feature"+to_string(i+1));
         }
     }
     
-    // feature matching
+    // ------------------------------------------------- feature matching
     Matcher_Param matcher_param(0.3, 128, 10, 3);
     Matcher_Flann matcher(matcher_param);
-    vector<vector<Match> > matches(nimages - 1, vector<Match>());
+    vector<vector<DMatch> > matches(nimages - 1, vector<DMatch>());
     for (int i = 0; i < nimages - 1; ++i)
     {
         matcher.match(descs[i], descs[i+1], matches[i]);
-        if (is_vis)
+        if (/* DISABLES CODE */ (false))
         {
             draw_matches(images[i], keys[i], images[i+1], keys[i+1], matches[i], "matching"+to_string(i+1)+"_"+to_string(i+2));
         }
     }
     
-    // estimate fundamental matrix
+    // ------------------------------------------------- estimate fundamental matrix
     vector<std::pair<Vec2f, Vec2f> > data;
+    vector<Graph> graph(nimages - 1);
     for (int i = 0; i < nimages - 1; ++i)
     {
         for (int j = 0; j < matches[i].size(); ++j)
@@ -73,11 +78,11 @@ int main(const int argc, const char** argv)
         }
         vector<float> params(9);
         int* vote_inlier = new int[data.size()];
-        Param_Estimator<std::pair<Vec2f, Vec2f>, float>* fund_esti = new open3DCV::Fundamental_Estimator(0.2f);
+        Param_Estimator<std::pair<Vec2f, Vec2f>, float>* fund_esti = new open3DCV::Fundamental_Estimator(0.01f);
         float ratio_inlier = Ransac<std::pair<Vec2f, Vec2f>, float>::estimate(fund_esti, data, params, 0.99, vote_inlier);
         std::cout << "ratio of inliers: " << ratio_inlier << std::endl;
         
-        vector<Match> matches_inlier;
+        vector<DMatch> matches_inlier;
         vector<std::pair<Vec2f, Vec2f> > data_inlier;
         for (int j = 0; j < matches[i].size(); ++j)
         {
@@ -86,9 +91,18 @@ int main(const int argc, const char** argv)
                 matches_inlier.push_back(matches[i][j]);
                 data_inlier.push_back(data[j]);
             }
-
         }
-        draw_matches(images[i], keys[i], images[i+1], keys[i+1], matches_inlier, "matching_inlier"+to_string(i+1)+"_"+to_string(i+2));
+        if (is_vis)
+        {
+            draw_matches(images[i], keys[i], images[i+1], keys[i+1], matches_inlier, "matching_inlier"+to_string(i+1)+"_"+to_string(i+2));
+        }
+        
+        // ---- need improvement
+        vector<int> ind(2);
+        ind[0] = i;
+        ind[1] = i+1;
+        Pair pair(ind, data_inlier);
+        // ---- need improvement
         
         Mat3f F;
         F << params[0], params[3], params[6],
@@ -100,7 +114,31 @@ int main(const int argc, const char** argv)
         {
             draw_epipolar_geometry(images[i], images[i+1], F, data_inlier, "epipolar"+to_string(i+1)+"_"+to_string(i+2));
         }
+        
+        // ---- need improvement
+        float f = 719.5459;
+        const int w = 480, h = 640;
+        pair.F_ = F;
+        pair.K_[0] << f, 0, w/2.0,
+                      0, f, h/2.0,
+                      0, 0, 1;
+        pair.K_[1] = pair.K_[0];
+        pair.E_ = pair.K_[1].transpose() * pair.F_ * pair.K_[0];
+        // ---- need improvement
+        
+        Rt_from_E(pair);
+        graph[i].init(pair);
+        
+        // triangulate
+        triangulate_nonlinear(graph[i]);
+        
+        // check the triangulation error
+        reprojection_error(graph[i]);
+        
+        delete [] vote_inlier;
         data.clear();
+        matches_inlier.clear();
+        data_inlier.clear();
     }
     
     return 0;

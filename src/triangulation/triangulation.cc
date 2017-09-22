@@ -2,7 +2,7 @@
 #include <limits>
 #include "math/numeric.h"
 #include "camera/camera.h"
-#include "triangulation.h"
+#include "triangulation/triangulation.h"
 
 using std::isnan;
 using std::numeric_limits;
@@ -10,7 +10,7 @@ using std::numeric_limits;
 namespace open3DCV {
     
     // ---------------------------- Linear triangulation
-    void triangulate_linear(const vector<Mat34f>& poses, const vector<Vec2f>& pts, Vec3f& pt_triangulated)
+    void triangulate_linear(const vector<Mat34f>& poses, const vector<Vec2f>& pts, Vec3f& pt3d)
     {
         Matf A(2 * pts.size(), 4);
         for (int i = 0; i < pts.size(); ++i)
@@ -30,41 +30,37 @@ namespace open3DCV {
         }
         Vec4f X;
         nullspace<Matf, Vec4f>(&A, &X);
-        pt_triangulated = X.block<3, 1>(0, 0).array() / X(3);
+        pt3d = X.head(3) / X(3);
     }
     
-    void triangulate_linear(const vector<Camera>& cameras, const vector<Keypoint>& keys, Vec3f& pt_triangulated)
+    void triangulate_linear(const vector<Mat34f>& poses, const vector<Keypoint>& keys, Vec3f& pt3d)
     {
-        vector<Mat34f> poses(keys.size());
         vector<Vec2f> pts(keys.size());
         for (int i = 0; i < keys.size(); ++i)
         {
-            int idx = keys[i].index();
-            poses[i] = cameras[idx].projection();
+            int ind_cam = keys[i].index();
             pts[i] = keys[i].coords();
         }
-        triangulate_linear(poses, pts, pt_triangulated);
+        triangulate_linear(poses, pts, pt3d);
     }
     
-    void triangulate_linear(const vector<Camera>& cameras, const Track& track, Structure_Point& structure_pt)
+    void triangulate_linear(const vector<Mat34f>& poses, const Track& track, Structure_Point& structure_pt)
     {
-        vector<Mat34f> poses(track.size());
         vector<Vec2f> pts(track.size());
         Vec3i color(0, 0, 0);
         for (int i = 0; i < track.size(); ++i)
         {
-            poses[i] = cameras[track[i].index()].projection();
             pts[i] = track[i].coords();
             color += track[i].color();
         }
-        Vec3f pt_triangulated;
-        triangulate_linear(poses, pts, pt_triangulated);
-        structure_pt.coords() = pt_triangulated;
+        Vec3f pt3d;
+        triangulate_linear(poses, pts, pt3d);
+        structure_pt.coords() = pt3d;
         structure_pt.color() = color;
     }
     
     // ---------------------------- Midpoint triangulation
-    void triangulate_midpoint(const vector<Vec3f>& centers, const vector<Vec3f>& directions, const vector<Vec2f>& pts, Vec3f& pt_triangulated)
+    void triangulate_midpoint(const vector<Vec3f>& centers, const vector<Vec3f>& directions, const vector<Vec2f>& pts, Vec3f& pt3d)
     {
         double min_dist = numeric_limits<float>::max();
         Vec3f min_midpoint(0, 0, 0);
@@ -94,69 +90,70 @@ namespace open3DCV {
                 min_midpoint = dist * cdist < min_dist ? (min_dist = dist * cdist), midpoint : min_midpoint;
                 if (dist * cdist < 0.1f)
                 {
-                    pt_triangulated = min_midpoint;
+                    pt3d = min_midpoint;
                 }
             }
         }
-        pt_triangulated = min_midpoint;
+        pt3d = min_midpoint;
     }
     
-    void triangulate_midpoint(const vector<Camera>& cameras, const vector<Keypoint>& keys, Vec3f& pt_triangulated)
-    {
-        int sz = static_cast<int>(keys.size());
-        vector<Vec3f> centers(sz);
-        vector<Vec3f> directs(sz);
-        vector<Vec2f> pts(sz);
-        
-        for (int i = 0; i < sz; ++i)
-        {
-            int idx = keys[i].index();
-            centers[i] = cameras[idx].center();
-            directs[i] = cameras[idx].direction();
-            pts[i] = keys[i].coords();
-        }
-        triangulate_midpoint(centers, directs, pts, pt_triangulated);
-    }
-    
-    void triangulate_midpoint(const vector<Camera>& cameras, const Track& track, Structure_Point& structure_point)
-    {
-        int sz = static_cast<int>(track.size());
-        vector<Vec3f> centers(sz);
-        vector<Vec3f> directs(sz);
-        vector<Vec2f> pts(sz);
-        Vec3i color(0, 0, 0);
-        for (int i = 0; i < sz; ++i)
-        {
-            int idx = track[i].index();
-            centers[i] = cameras[idx].center();
-            directs[i] = cameras[idx].direction();
-            pts[i] = track[i].coords();
-            color += track[i].color();
-        }
-        Vec3f pt_triangulated;
-        triangulate_midpoint(centers, directs, pts, pt_triangulated);
-        structure_point.coords() = pt_triangulated;
-        structure_point.color() = color / sz;
-    }
+//    void triangulate_midpoint(const vector<Camera>& cameras, const vector<Keypoint>& keys, Vec3f& pt3d)
+//    {
+//        int sz = static_cast<int>(keys.size());
+//        vector<Vec3f> centers(sz);
+//        vector<Vec3f> directs(sz);
+//        vector<Vec2f> pts(sz);
+//        
+//        for (int i = 0; i < sz; ++i)
+//        {
+//            int idx = keys[i].index();
+//            centers[i] = cameras[idx].center();
+//            directs[i] = cameras[idx].direction();
+//            pts[i] = keys[i].coords();
+//        }
+//        triangulate_midpoint(centers, directs, pts, pt3d);
+//    }
+//    
+//    void triangulate_midpoint(const vector<Camera>& cameras, const Track& track, Structure_Point& structure_point)
+//    {
+//        int sz = static_cast<int>(track.size());
+//        vector<Vec3f> centers(sz);
+//        vector<Vec3f> directs(sz);
+//        vector<Vec2f> pts(sz);
+//        Vec3i color(0, 0, 0);
+//        for (int i = 0; i < sz; ++i)
+//        {
+//            int idx = track[i].index();
+//            centers[i] = cameras[idx].center();
+//            directs[i] = cameras[idx].direction();
+//            pts[i] = track[i].coords();
+//            color += track[i].color();
+//        }
+//        Vec3f pt3d;
+//        triangulate_midpoint(centers, directs, pts, pt3d);
+//        structure_point.coords() = pt3d;
+//        structure_point.color() = color / sz;
+//    }
     
     // ---------------------------- Nonlinear triangulation
     // adapted from vgg_X_from_xP_nonlin
-    void triangulate_nonlinear(const vector<Mat34f>& poses, const vector<Vec2f>& pts, Vec3f& pt_triangulated)
+    void triangulate_nonlinear(const vector<Mat34f>& poses, const vector<Vec2f>& pts, Vec3f& pt3d)
     {
         int sz = static_cast<int>(pts.size());
-        triangulate_linear(poses, pts, pt_triangulated);
+        triangulate_linear(poses, pts, pt3d);
         
         Mat4f T, Ttmp;
-        Eigen::Matrix<float, 1, 4> pt_triangulated_homo = pt_triangulated.transpose().homogeneous();
+        // ------------ need improvement
+        Eigen::Matrix<float, 1, 4> pt3d_homo = pt3d.transpose().homogeneous();
         Mat4f A;
         A.setZero();
-        A.block<1, 4>(0, 0) = pt_triangulated_homo;
+        A.block<1, 4>(0, 0) = pt3d_homo;
         Eigen::JacobiSVD<Mat4f> asvd(A, Eigen::ComputeFullV);
         T = asvd.matrixV();
-//        svd<Eigen::Matrix<float, 1, 4>, Mat4f, Mat4f>(&pt_triangulated_homo, nullptr, nullptr, &T);
         Ttmp.block<4, 3>(0, 0) = T.block<4, 3>(0, 1);
         Ttmp.block<4, 1>(0, 3) = T.block<4, 1>(0, 0);
         T = Ttmp;
+        // ------------ need improvement
 
         vector<Mat34f> Q(sz);
         for (int i = 0; i < sz; ++i)
@@ -182,15 +179,76 @@ namespace open3DCV {
         }
         
         Vec4f X = T * Y.homogeneous();
-        pt_triangulated = X.block<3, 1>(0, 0).array() / X(3);
+        pt3d = X.block<3, 1>(0, 0).array() / X(3);
+        
+        // for debugging
+        bool is_debug = false;
+        if (is_debug)
+        {
+            float err = 0.0f;
+            for (int i = 0; i < sz; ++i)
+            {
+                Vec3f x_homog = poses[i] * X;
+                Vec2f dx = x_homog.head<2>() / x_homog(2) - pts[i];
+                err += sqrtf(dx.dot(dx));
+            }
+            std::cout << "error (after refinement): " << err << std::endl;
+        }
     }
     
-    void triangulate_nonlinaer(vector<Mat34f>& poses, const vector<vector<Vec2f> >& pts, vector<Vec3f>& pts3d)
+    void triangulate_nonlinear(const vector<Mat34f>& poses, const vector<Keypoint>& keys, Vec3f& pt3d)
     {
+        const int nkeys = static_cast<int>(keys.size());
+        vector<Vec2f> pts(nkeys);
+        for (int i = 0; i < nkeys; ++i)
+        {
+            pts[i] = keys[i].coords();
+        }
+        triangulate_nonlinear(poses, pts, pt3d);
+    }
+    
+    void triangulate_nonlinear(const vector<Mat34f>& poses, const Track& track, Structure_Point& struct_pt)
+    {
+        const unsigned int nkeys = static_cast<unsigned int>(track.size());
+        vector<Vec2f> pts(nkeys);
+        for (unsigned int i = 0; i < nkeys; ++i)
+        {
+            pts[i] = track[i].coords();
+        }
+        Vec3f pt3d;
+        triangulate_nonlinear(poses, pts, pt3d);
+        struct_pt.coords() = pt3d;
+    }
+    
+    void triangulate_nonlinear(const vector<Mat34f>& poses, const vector<pair<Vec2f, Vec2f> >& pts, vector<Vec3f>& pts3d)
+    {
+        vector<Vec2f> pts_pair(2);
         for (int i = 0; i < pts.size(); ++i)
         {
-            triangulate_nonlinear(poses, pts[i], pts3d[i]);
+            pts_pair[0] = pts[i].first;
+            pts_pair[1] = pts[i].second;
+            triangulate_nonlinear(poses, pts_pair, pts3d[i]);
         }
+    }
+    
+    void triangulate_nonlinear(const vector<Mat34f>& poses, const vector<Track>& tracks, vector<Structure_Point>& struct_pts)
+    {
+        const size_t ntracks = tracks.size();
+        struct_pts.resize(ntracks);
+        for (size_t i = 0; i < ntracks; ++i)
+        {
+            triangulate_nonlinear(poses, tracks[i], struct_pts[i]);
+        }
+    }
+    
+    void triangulate_nonlinear(Graph& graph)
+    {
+        vector<Mat34f> poses(graph.ncams_);
+        for (int i = 0; i < graph.ncams_; ++i)
+        {
+            poses[i] = graph.K_[i] * graph.Rt_[i];
+        }
+        triangulate_nonlinear(poses, graph.tracks_, graph.structure_points_);
     }
     
     void residule(const Vec3f& pt3d, const vector<Vec2f>& pts, const vector<Mat34f>& Q, Vecf& e, Matf& J)
@@ -265,4 +323,37 @@ namespace open3DCV {
 //
 //      return g;
 //    }
+    
+    // --------------------------------------- reprojection error
+    float reprojection_error(const Graph& graph)
+    {
+        typedef unsigned int uint;
+        const int ncams = graph.ncams_;
+        vector<Mat34f> poses(ncams);
+        for (int i = 0; i < ncams; ++i)
+        {
+            poses[i] = graph.K_[i] * graph.Rt_[i];
+        }
+        const uint ntracks = static_cast<uint>(graph.tracks_.size());
+        float error = 0.0f, err = 0.0f;
+        
+        for (uint i = 0; i < ntracks; ++i)
+        {
+            err = 0.0f;
+            const uint nkeys = static_cast<uint>(graph.tracks_[i].size());
+            for (uint j = 0; j < nkeys; ++j)
+            {
+                uint ind_cam_arry = graph.index(graph.tracks_[i][j].index());
+                Vec3f x_homog;
+                x_homog = poses[ind_cam_arry] * graph.structure_points_[i].coords().homogeneous();
+                Vec2f dx = x_homog.head(2) / x_homog(2) - graph.tracks_[i][j].coords();
+                err += sqrtf(dx.dot(dx));
+            }
+            error += err / nkeys;
+        }
+        error /= ntracks;
+        std::cout << "triangulation error init: " << error << std::endl;
+        
+        return error;
+    }
 }

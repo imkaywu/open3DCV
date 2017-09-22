@@ -6,6 +6,8 @@ namespace open3DCV
     class Structure_Point
     {
     public:
+        Structure_Point();
+        Structure_Point(const Vec3f &coord);
         Structure_Point(const Vec3f &coord, const Vec3i &color);
         
         const Vec3f &coords() const;
@@ -18,6 +20,16 @@ namespace open3DCV
         Vec3i c_; //!< The r,g,b color components (0-255 for each)
         
     };
+        
+    inline Structure_Point::Structure_Point() : p_(0, 0, 0), c_(0, 0, 0)
+    {
+        // no op
+    }
+    
+    inline Structure_Point::Structure_Point(const Vec3f& coord) : p_(coord), c_(0, 0, 0)
+    {
+        // no op
+    }
     
     inline Structure_Point::Structure_Point(const Vec3f &coord, const Vec3i &color) : p_(coord), c_(color)
     {

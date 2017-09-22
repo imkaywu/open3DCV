@@ -221,6 +221,16 @@ inline T sign_func(T x)
     else
         return -1.0;
 }
+    
+template<typename TMat, typename TVec>
+TMat cross_mat(const TVec& x)
+{
+    TMat X;
+    X << 0,     -x(2),  x(1),
+         x(2),   0,    -x(0),
+        -x(1),   x(0),  0;
+    return X;
+}
 
 /**
  * @brief Compute R(diagonal), Q(orthogonal)

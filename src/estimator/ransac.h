@@ -18,6 +18,17 @@ public:
     // - data:              the input from which the parameters will be estimated
     // - prob_wo_outlieres: the probability that at least one of the selected subsets doens't contain an outlier,
     //                      must be in (0, 1).
+    //
+    // - number of iterations (k):
+    //
+    //               log(1 - p)
+    //         k = --------------
+    //              log(1 - w^n)
+    //
+    // - p: desired probability without an outlier
+    // - w: percentage of inliers in the data
+    // - n: minimum number of data for estimation
+    //
     static float estimate(Param_Estimator<T, S>* param_estimator,
                           std::vector<T>& data,
                           std::vector<S>& params,
@@ -26,7 +37,6 @@ public:
     
 private:
     
-    // this has to be static, why?
     static unsigned int choose(unsigned int n, unsigned int m);
     
     class Subset_Ind_Cmp
