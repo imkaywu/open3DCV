@@ -8,6 +8,7 @@
 #include "estimator/ransac.h"
 #include "estimator/est_Rt_from_E.h"
 #include "triangulation/triangulation.h"
+#include "sfm/bundle_adjust.h"
 #include "sfm/graph.h"
 #include "viz/plot.h"
 
@@ -67,6 +68,7 @@ int main(const int argc, const char** argv)
     vector<Graph> graph(nimages - 1);
     for (int i = 0; i < nimages - 1; ++i)
     {
+        // ------ estimate Fundamental matrix ------
         for (int j = 0; j < matches[i].size(); ++j)
         {
             Vec2f x1 = keys[i][matches[i][j].ikey1_].coords();
@@ -115,6 +117,7 @@ int main(const int argc, const char** argv)
             draw_epipolar_geometry(images[i], images[i+1], F, data_inlier, "epipolar"+to_string(i+1)+"_"+to_string(i+2));
         }
         
+        // ------ estimate relative pose ------
         // ---- need improvement
         float f = 719.5459;
         const int w = 480, h = 640;
@@ -129,16 +132,34 @@ int main(const int argc, const char** argv)
         Rt_from_E(pair);
         graph[i].init(pair);
         
-        // triangulate
+        // ------ triangulate ------
         triangulate_nonlinear(graph[i]);
         
         // check the triangulation error
-        reprojection_error(graph[i]);
+        float error = reprojection_error(graph[i]);
+        std::cout << "reprojection error (before bundle adjustment): " << error << std::endl;
         
         delete [] vote_inlier;
         data.clear();
         matches_inlier.clear();
         data_inlier.clear();
+        
+        // ------ bundle adjustment ------
+        ceres::Problem problem;
+        for (int m = 0; m < graph[i].tracks_.size(); ++m)
+        {
+            for (int n = 0; n < graph[i].tracks_[m].size(); ++n)
+            {
+                float x, y;
+                x = graph[i].tracks_[m][n].coords().x();
+                y = graph[i].tracks_[m][n].coords().y();
+                ceres::CostFunction* cost_function =
+                    ReprojectionError::create(x, y);
+                double cam_params[9];
+                double pt3d[3];
+                problem.AddResidualBlock(cost_function, NULL, cam_params, pt3d);
+            }
+        }
     }
     
     return 0;

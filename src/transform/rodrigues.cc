@@ -8,7 +8,8 @@ namespace open3DCV
      ** @param dR_pt 9x3 matrix - array of 27 float (in).
      ** @param om_pt 3   vector - array of 3 float (out).
      **/
-    void rodrigues(Mat3f& R, Matf* dR_pt, const Vec3f& om)
+    template<typename T>
+    void rodrigues(T* R, T* dR, const T* om)
     {
         /*
          Let
@@ -27,17 +28,17 @@ namespace open3DCV
          
          d(vec rodrigues(om))    sth  d ^r    1 - cth  d (^r)^2
          -------------------- =  ---- ----- + -------  -------- +
-         d om^T             th  d r^T     th      d r^T
+               d om^T             th  d r^T     th      d r^T
          
-         sth                     1 - cth
+                         sth                     1 - cth
          + vec^r (cth - -----) + vec^r^2 (sth - 2-------)r^T
-         th                         th
+                         th                         th
          */
         
 #define OM(i)       om[(i)]
-#define R(i,j)      R(i,j)
-#define DR(i,j)     (*dR_pt)(i,j)
-#undef small // ?
+#define R(i,j)      R[(i)+3*(j)]
+#define DR(i,j)     dR[(i)+9*(j)]
+#undef small
         
         const double small = 1e-6 ;
         
@@ -50,7 +51,7 @@ namespace open3DCV
             R(1,0) = 0.0 ; R(1,1) = 1.0 ; R(1,2) = 0.0 ;
             R(2,0) = 0.0 ; R(2,1) = 0.0 ; R(2,2) = 1.0 ;
             
-            if(dR_pt) {
+            if(dR) {
                 DR(0,0) = 0  ; DR(0,1) = 0   ; DR(0,2) = 0 ;
                 DR(1,0) = 0  ; DR(1,1) = 0   ; DR(1,2) = 1 ;
                 DR(2,0) = 0  ; DR(2,1) = -1  ; DR(2,2) = 0 ;
@@ -98,7 +99,7 @@ namespace open3DCV
             R(1,2) =   - sth*x  + mcth * yz ;
             R(2,2) = 1          - mcth * (xx+yy) ;
             
-            if(dR_pt) {
+            if(dR) {
                 double a =  sth / th ;
                 double b = mcth / th ;
                 double c = cth - a ;
@@ -150,8 +151,8 @@ namespace open3DCV
     
     /** @brief Inverse Rodrigues formula
      *
-     ** @param om_pt  3    vector - array of 3   dobule (out).
-     ** @param dom_pt 3x9  matrix - array of 3x9 dobule (out).
+     ** @param om_pt  3    vector - array of 3   double (out).
+     ** @param dom_pt 3x9  matrix - array of 3x9 double (out).
      ** @param R_pt   3x3  matrix - array of 9   double (in).
      **
      ** This function computes the Rodrigues formula of the argument @a
@@ -159,7 +160,8 @@ namespace open3DCV
      ** non null, then the derivative of the Rodrigues formula is computed
      ** and stored into the matrix @a dR_pt.
      **/
-    void irodrigues(Vec3f&om, Matf* dom_pt, const Mat3f& R)
+    template<typename T>
+    void irodrigues(T*om, T* dom, const T* R)
     {
         /*
          tr R - 1          1    [ R32 - R23 ]
@@ -174,10 +176,10 @@ namespace open3DCV
          
          trace(A) < -1 only for small num. errors.
          */
-#define OM(i)       om(i)
-#define DOM(i,j)    (*dom_pt)(i,j)
-#define R(i,j)      R(i,j)
-#define W(i,j)   W_pt[(i)+3*(j)]
+#define OM(i)       om[(i)]
+#define DOM(i,j)    dom[(i)+3*(j)] // why not dom[3*(i)+(j)]
+#define R(i,j)      R[(i)+3*(j)] // why not R[3*(i)+(j)]
+#define W(i,j)      W_pt[(i)+3*(j)]
         
         const double small = 1e-6 ;
         
@@ -242,11 +244,10 @@ namespace open3DCV
                 OM(1) = scale * y ;
                 OM(2) = scale * z ;
                 
-                if( dom_pt ) {
+                if( dom ) {
                     int k ;
                     for(k=0; k<3*9; ++k)
-                        (*dom_pt)(k) = NAN;
-                    //dom_pt [k] = NAN ;
+                        dom [k] = NAN ;
                 }
                 return ;
             }
@@ -258,7 +259,7 @@ namespace open3DCV
             OM(1) = 0.5*a*(R(0,2) - R(2,0)) ;
             OM(2) = 0.5*a*(R(1,0) - R(0,1)) ;
             
-            if( dom_pt ) {
+            if( dom ) {
                 if( fabs(sth) < small ) {
                     a = 0.5 ;
                     b = 0 ;
@@ -310,5 +311,9 @@ namespace open3DCV
 #undef R
 #undef W
     }
-
+    
+    template void rodrigues<float>(float*, float*, const float*);
+    template void rodrigues<double>(double*, double*, const double*);
+    template void irodrigues<float>(float*, float*, const float*);
+    template void irodrigues<double>(double*, double*, const double*);
 }

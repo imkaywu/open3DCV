@@ -37,7 +37,7 @@ namespace open3DCV
         // no op
     }
     
-    int Graph::index(const int icam) const
+    int Graph::index(int icam) const
     {
         for (int i = 0; i < ncams_; ++i)
         {

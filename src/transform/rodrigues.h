@@ -6,8 +6,20 @@
 namespace open3DCV
 {
     // modified from 'rodrigues.h' and 'rodrigues.c' from VLFEAT
-    void rodrigues(Mat3f& R, Matf* dR_pt, const Vec3f& om);
-    void irodrigues(Vec3f& om, Matf* dom_pt, const Mat3f& R);
+    template<typename T>
+    void rodrigues(T* R, T* dR, const T* om);
+    template<typename T>
+    void irodrigues(T* om, T* dR, const T* R);
+    
+    inline void rodrigues(Mat3f& R, Matf* dR, const Vec3f& om)
+    {
+        rodrigues<float>(R.data(), dR->data(), om.data());
+    }
+    
+    inline void irodrigues(Vec3f& om, Matf* dom, const Mat3f& R)
+    {
+        irodrigues<float>(om.data(), dom->data(), R.data());
+    }
 }
 
 #endif

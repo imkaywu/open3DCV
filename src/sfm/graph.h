@@ -15,7 +15,7 @@ namespace open3DCV
         ~Graph();
         
         void init(const Pair& pair);
-        int index(const int icam) const;
+        int index(int icam) const;
         
         int ncams_;
         std::vector<int> ind_cam_;

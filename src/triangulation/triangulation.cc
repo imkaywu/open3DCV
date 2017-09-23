@@ -243,12 +243,30 @@ namespace open3DCV {
     
     void triangulate_nonlinear(Graph& graph)
     {
-        vector<Mat34f> poses(graph.ncams_);
-        for (int i = 0; i < graph.ncams_; ++i)
+//        vector<Mat34f> poses(graph.ncams_);
+//        for (int i = 0; i < graph.ncams_; ++i)
+//        {
+//            poses[i] = graph.K_[i] * graph.Rt_[i];
+//        }
+//        triangulate_nonlinear(poses, graph.tracks_, graph.structure_points_);
+        
+        const int ntracks = graph.tracks_.size();
+        for (int i = 0; i < ntracks; ++i)
         {
-            poses[i] = graph.K_[i] * graph.Rt_[i];
+            const int nkeys = graph.tracks_[i].size();
+            vector<Mat34f> poses(nkeys);
+            vector<Vec2f> pts(nkeys);
+            for (int j = 0; j < nkeys; ++j)
+            {
+                int ind_cam = graph.tracks_[i][j].index();
+                int ind_cam_arr = graph.index(ind_cam);
+                poses[j] = graph.K_[ind_cam_arr] * graph.Rt_[ind_cam_arr];
+                pts[j] = graph.tracks_[i][j].coords();
+                Vec3f pt3d;
+                triangulate_nonlinear(poses, pts, pt3d);
+                graph.structure_points_[i].coords() = pt3d;
+            }
         }
-        triangulate_nonlinear(poses, graph.tracks_, graph.structure_points_);
     }
     
     void residule(const Vec3f& pt3d, const vector<Vec2f>& pts, const vector<Mat34f>& Q, Vecf& e, Matf& J)
@@ -328,15 +346,16 @@ namespace open3DCV {
     float reprojection_error(const Graph& graph)
     {
         typedef unsigned int uint;
+        
         const int ncams = graph.ncams_;
         vector<Mat34f> poses(ncams);
         for (int i = 0; i < ncams; ++i)
         {
             poses[i] = graph.K_[i] * graph.Rt_[i];
         }
-        const uint ntracks = static_cast<uint>(graph.tracks_.size());
-        float error = 0.0f, err = 0.0f;
         
+        float error = 0.0f, err = 0.0f;
+        const uint ntracks = static_cast<uint>(graph.tracks_.size());
         for (uint i = 0; i < ntracks; ++i)
         {
             err = 0.0f;
@@ -347,13 +366,13 @@ namespace open3DCV {
                 Vec3f x_homog;
                 x_homog = poses[ind_cam_arry] * graph.structure_points_[i].coords().homogeneous();
                 Vec2f dx = x_homog.head(2) / x_homog(2) - graph.tracks_[i][j].coords();
-                err += sqrtf(dx.dot(dx));
+                err += sqrt(dx.dot(dx));
             }
-            error += err / nkeys;
+            err /= nkeys;
+            error += err;
         }
         error /= ntracks;
-        std::cout << "triangulation error init: " << error << std::endl;
-        
+//        std::cout << "triangulation error init: " << std::endl << error << std::endl;
         return error;
     }
 }
