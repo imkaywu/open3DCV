@@ -6,12 +6,13 @@ namespace open3DCV
     struct Matcher_Param
     {
         // all matchers
-        float ratio = 0.8;
+        float ratio = 0.6 * 0.6;
+        int nmatches_min = 50;
         
         // Flann matcher
         int ndims = 128;
         int leaf_max_size = 10;
-        int nresults = 3;
+        int nresults = 2;
         
         Matcher_Param() { };
         Matcher_Param(const float r_ratio) : ratio(r_ratio) { };

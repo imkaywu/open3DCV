@@ -13,27 +13,21 @@ namespace open3DCV
     // camera intrinsics to be bundled
     // BUNDLE_RADIAL implies bundling of k1 and k2 only, no bundling of k3 is possible at this moment.
     enum BundleIntrinsics {
-        BUNDLE_NO_INTRINSICS = 0,
-        BUNDLE_FOCAL_LENGTH = 1,
-        BUNDLE_PRINCIPAL_POINT = 2,
-        BUNDLE_RADIAL_K1 = 4,
-        BUNDLE_RADIAL_K2 = 8,
-        BUNDLE_RADIAL = 12,
-        BUNDLE_TANGENTIAL_P1 = 16,
-        BUNDLE_TANGENTIAL_P2 = 32,
-        BUNDLE_TANGENTIAL = 48,
-    };
-    
-    // denotes which blocks to keep constant during bundling
-    enum BundleConstraints {
-        BUNDLE_NO_CONSTRAINTS = 0,
-        BUNDLE_NO_TRANSLATION = 1,
+        BUNDLE_NO_INTRINSICS = 0,  // 00000000
+        BUNDLE_FOCAL_LENGTH = 1,   // 00000001
+        BUNDLE_PRINCIPAL_POINT = 2,// 00000010
+        BUNDLE_RADIAL_K1 = 4,      // 00000100
+        BUNDLE_RADIAL_K2 = 8,      // 00001000
+        BUNDLE_RADIAL = 12,        // 00001100
+        BUNDLE_TANGENTIAL_P1 = 16, // 00010000
+        BUNDLE_TANGENTIAL_P2 = 32, // 00100000
+        BUNDLE_TANGENTIAL = 48,    // 00110000
     };
     
     // The intrinsics need to get combined into a single parameter block;
     // use these enums to index instead of numeric constants.
     enum {
-        OFFSET_FOCAL_LENGTH,
+        OFFSET_FOCAL_LENGTH = 0,
         OFFSET_PRINCIPAL_POINT_X,
         OFFSET_PRINCIPAL_POINT_Y,
         OFFSET_K1,
@@ -176,18 +170,18 @@ namespace open3DCV
     
     void unpack_camera_intrinsics(Graph& graph, const vector<Vec8> &intrinsics)
     {
-        for (int i = 0; i < graph.extrinsics_mat_.size(); ++i)
+        for (int i = 0; i < graph.intrinsics_mat_.size(); ++i)
         {
             Mat3 K;
-            K << intrinsics[i](0), 0,                 intrinsics[i](1),
-                 0,                intrinsics[i](0),  intrinsics[i](2),
-                 0,                0,                 1;
+            K << intrinsics[i](OFFSET_FOCAL_LENGTH), 0,                                   intrinsics[i](OFFSET_PRINCIPAL_POINT_X),
+                 0,                                  intrinsics[i](OFFSET_FOCAL_LENGTH),  intrinsics[i](OFFSET_PRINCIPAL_POINT_Y),
+                 0,                                  0,                                   1;
             graph.intrinsics_mat_[i] = K.cast<float>();
         }
     }
     
     void Open3DCVBundleAdjustment(Graph& graph,
-                            const int bundle_intrinsics)
+                                  const int bundle_intrinsics)
     {
         ceres::Problem::Options problem_options;
         ceres::Problem problem(problem_options);
@@ -197,24 +191,30 @@ namespace open3DCV
         vector<Vec8> intrinsics = pack_camera_intrinsics(graph);
         
         // construct the problem
+        bool is_camera_locked = false;
         for (int m = 0; m < graph.tracks_.size(); ++m)
         {
             for (int n = 0; n < graph.tracks_[m].size(); ++n)
             {
                 Keypoint key = graph.tracks_[m][n];
-                
-                double x, y;
-                x = (double)key.coords().x();
-                y = (double)key.coords().y();
+                double x = (double)key.coords().x();
+                double y = (double)key.coords().y();
                 ceres::CostFunction* cost_function = Open3DCVReprojectionError::create(x, y);
                 
                 int idx = graph.index(key.index());
                 Vec3 pt3d = graph.structure_points_[m].coords().cast<double>();
                 problem.AddResidualBlock(cost_function, NULL, &intrinsics[idx](0), &extrinsics[idx](0), &pt3d(0));
+                
+                // lock the first camera to better deal with scene orientation ambiguity
+                if (!is_camera_locked)
+                {
+                    problem.SetParameterBlockConstant(&extrinsics[idx](0));
+                    is_camera_locked = true;
+                }
             }
         }
         
-        // set parameters constant
+        // set part of parameters constant
         if (bundle_intrinsics == BUNDLE_NO_INTRINSICS)
         {
             for (int i = 0; i < intrinsics.size(); ++i)
@@ -251,7 +251,7 @@ namespace open3DCV
         options.preconditioner_type = ceres::SCHUR_JACOBI;
         options.linear_solver_type = ceres::ITERATIVE_SCHUR;
         options.use_inner_iterations = true;
-        options.max_num_iterations = 1000;
+        options.max_num_iterations = 100;
         options.minimizer_progress_to_stdout = true;
 
         // solve

@@ -51,7 +51,7 @@ int main(const int argc, const char** argv)
     }
     
     // ------------------------------------------------- feature matching
-    Matcher_Param matcher_param(0.3, 128, 10, 3);
+    Matcher_Param matcher_param(0.5, 128, 10, 3);
     Matcher_Flann matcher(matcher_param);
     vector<vector<DMatch> > matches(nimages - 1, vector<DMatch>());
     for (int i = 0; i < nimages - 1; ++i)
@@ -80,7 +80,7 @@ int main(const int argc, const char** argv)
         }
         vector<float> params(9);
         int* vote_inlier = new int[data.size()];
-        Param_Estimator<std::pair<Vec2f, Vec2f>, float>* fund_esti = new open3DCV::Fundamental_Estimator(0.01f);
+        Param_Estimator<std::pair<Vec2f, Vec2f>, float>* fund_esti = new open3DCV::Fundamental_Estimator(1e-8);
         float ratio_inlier = Ransac<std::pair<Vec2f, Vec2f>, float>::estimate(fund_esti, data, params, 0.99, vote_inlier);
         std::cout << "ratio of inliers: " << ratio_inlier << std::endl;
         
@@ -110,6 +110,14 @@ int main(const int argc, const char** argv)
         F << params[0], params[3], params[6],
              params[1], params[4], params[7],
              params[2], params[5], params[8];
+        
+        // estimate fundamental matrix accuracy
+        float dist = 0;
+        for (int i = 0; i < data_inlier.size(); ++i)
+        {
+            dist += data_inlier[i].second.homogeneous().dot(F * data_inlier[i].first.homogeneous());
+        }
+        cout << "Fundamental matrix dist: " << dist / data_inlier.size() << endl;
         
         // visualize epipolar geometry
         if (is_vis)
@@ -145,10 +153,9 @@ int main(const int argc, const char** argv)
         data_inlier.clear();
         
         // ------ bundle adjustment ------
-        const int bundle_intrinsics = BUNDLE_FOCAL_LENGTH;
-        Open3DCVBundleAdjustment(graph[i], bundle_intrinsics);
-        error = reprojection_error(graph[i]);
-        std::cout << "reprojection error (after bundle adjustment): " << error << std::endl;
+//        Open3DCVBundleAdjustment(graph[i], BUNDLE_PRINCIPAL_POINT);
+//        error = reprojection_error(graph[i]);
+//        std::cout << "reprojection error (after bundle adjustment): " << error << std::endl;
     }
     
     return 0;
