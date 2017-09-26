@@ -4,12 +4,12 @@ namespace open3DCV
 {
     /** @brief Rodrigues' formula
      **
-     ** @param R_pt  3x3 matrix - array of 9 float (in) .
-     ** @param dR_pt 9x3 matrix - array of 27 float (in).
-     ** @param om_pt 3   vector - array of 3 float (out).
+     ** @param R  3x3 matrix - array of 9 float (in) .
+     ** @param dR 9x3 matrix - array of 27 float (in).
+     ** @param om 3   vector - array of 3 float (out).
      **/
     template<typename T>
-    void rodrigues(T* R, T* dR, const T* om)
+    void rodrigues(T* r_R, T* r_dR, const T* r_om)
     {
         /*
          Let
@@ -35,9 +35,9 @@ namespace open3DCV
                          th                         th
          */
         
-#define OM(i)       om[(i)]
-#define R(i,j)      R[(i)+3*(j)]
-#define DR(i,j)     dR[(i)+9*(j)]
+#define OM(i)       r_om[(i)]
+#define R(i,j)      r_R[(i)+3*(j)]
+#define DR(i,j)     r_dR[(i)+9*(j)]
 #undef small
         
         const double small = 1e-6 ;
@@ -51,7 +51,7 @@ namespace open3DCV
             R(1,0) = 0.0 ; R(1,1) = 1.0 ; R(1,2) = 0.0 ;
             R(2,0) = 0.0 ; R(2,1) = 0.0 ; R(2,2) = 1.0 ;
             
-            if(dR) {
+            if(r_dR) {
                 DR(0,0) = 0  ; DR(0,1) = 0   ; DR(0,2) = 0 ;
                 DR(1,0) = 0  ; DR(1,1) = 0   ; DR(1,2) = 1 ;
                 DR(2,0) = 0  ; DR(2,1) = -1  ; DR(2,2) = 0 ;
@@ -99,7 +99,7 @@ namespace open3DCV
             R(1,2) =   - sth*x  + mcth * yz ;
             R(2,2) = 1          - mcth * (xx+yy) ;
             
-            if(dR) {
+            if(r_dR) {
                 double a =  sth / th ;
                 double b = mcth / th ;
                 double c = cth - a ;
@@ -151,9 +151,9 @@ namespace open3DCV
     
     /** @brief Inverse Rodrigues formula
      *
-     ** @param om_pt  3    vector - array of 3   double (out).
-     ** @param dom_pt 3x9  matrix - array of 3x9 double (out).
-     ** @param R_pt   3x3  matrix - array of 9   double (in).
+     ** @param om  3    vector - array of 3   double (out).
+     ** @param dom 3x9  matrix - array of 3x9 double (out).
+     ** @param R   3x3  matrix - array of 9   double (in).
      **
      ** This function computes the Rodrigues formula of the argument @a
      ** om_pt. The result is stored int the matrix @a R_pt. If @a dR_pt is
@@ -161,7 +161,7 @@ namespace open3DCV
      ** and stored into the matrix @a dR_pt.
      **/
     template<typename T>
-    void irodrigues(T*om, T* dom, const T* R)
+    void irodrigues(T*r_om, T* r_dom, const T* r_R)
     {
         /*
          tr R - 1          1    [ R32 - R23 ]
@@ -176,9 +176,9 @@ namespace open3DCV
          
          trace(A) < -1 only for small num. errors.
          */
-#define OM(i)       om[(i)]
-#define DOM(i,j)    dom[(i)+3*(j)] // why not dom[3*(i)+(j)]
-#define R(i,j)      R[(i)+3*(j)] // why not R[3*(i)+(j)]
+#define OM(i)       r_om[(i)]
+#define DOM(i,j)    r_dom[(i)+3*(j)] // why not dom[3*(i)+(j)]
+#define R(i,j)      r_R[(i)+3*(j)] // why not R[3*(i)+(j)]
 #define W(i,j)      W_pt[(i)+3*(j)]
         
         const double small = 1e-6 ;
@@ -244,10 +244,10 @@ namespace open3DCV
                 OM(1) = scale * y ;
                 OM(2) = scale * z ;
                 
-                if( dom ) {
+                if( r_dom ) {
                     int k ;
                     for(k=0; k<3*9; ++k)
-                        dom [k] = NAN ;
+                        r_dom [k] = NAN ;
                 }
                 return ;
             }
@@ -259,7 +259,7 @@ namespace open3DCV
             OM(1) = 0.5*a*(R(0,2) - R(2,0)) ;
             OM(2) = 0.5*a*(R(1,0) - R(0,1)) ;
             
-            if( dom ) {
+            if( r_dom ) {
                 if( fabs(sth) < small ) {
                     a = 0.5 ;
                     b = 0 ;

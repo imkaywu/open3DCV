@@ -25,9 +25,9 @@ namespace open3DCV
         ind_cam_.resize(2);
         ind_cam_[0] = ind_cam[0];
         ind_cam_[1] = ind_cam[1];
-        K_.resize(2);
-        Rt_.resize(2);
-        Rt_[0].block<3, 3>(0, 0) = Mat3f::Identity();
-        Rt_[0].block<3, 1>(0, 3).setZero();
+        intrinsics_mat_.resize(2);
+        extrinsics_mat_.resize(2);
+        extrinsics_mat_[0].block<3, 3>(0, 0) = Mat3f::Identity();
+        extrinsics_mat_[0].block<3, 1>(0, 3).setZero();
     }
 }

@@ -122,11 +122,11 @@ int main(const int argc, const char** argv)
         float f = 719.5459;
         const int w = 480, h = 640;
         pair.F_ = F;
-        pair.K_[0] << f, 0, w/2.0,
-                      0, f, h/2.0,
-                      0, 0, 1;
-        pair.K_[1] = pair.K_[0];
-        pair.E_ = pair.K_[1].transpose() * pair.F_ * pair.K_[0];
+        pair.intrinsics_mat_[0] << f, 0, w/2.0,
+                                   0, f, h/2.0,
+                                   0, 0, 1;
+        pair.intrinsics_mat_[1] = pair.intrinsics_mat_[0];
+        pair.E_ = pair.intrinsics_mat_[1].transpose() * pair.F_ * pair.intrinsics_mat_[0];
         // ---- need improvement
         
         Rt_from_E(pair);
@@ -145,21 +145,10 @@ int main(const int argc, const char** argv)
         data_inlier.clear();
         
         // ------ bundle adjustment ------
-        ceres::Problem problem;
-        for (int m = 0; m < graph[i].tracks_.size(); ++m)
-        {
-            for (int n = 0; n < graph[i].tracks_[m].size(); ++n)
-            {
-                float x, y;
-                x = graph[i].tracks_[m][n].coords().x();
-                y = graph[i].tracks_[m][n].coords().y();
-                ceres::CostFunction* cost_function =
-                    ReprojectionError::create(x, y);
-                double cam_params[9];
-                double pt3d[3];
-                problem.AddResidualBlock(cost_function, NULL, cam_params, pt3d);
-            }
-        }
+        const int bundle_intrinsics = BUNDLE_FOCAL_LENGTH;
+        Open3DCVBundleAdjustment(graph[i], bundle_intrinsics);
+        error = reprojection_error(graph[i]);
+        std::cout << "reprojection error (after bundle adjustment): " << error << std::endl;
     }
     
     return 0;

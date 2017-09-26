@@ -161,7 +161,7 @@ namespace open3DCV {
             Q[i] = poses[i] * T;
         }
         
-        // Newton
+        // Gauss-Newton
         Vec3f Y(0, 0, 0);
         Vecf err_prev(2 * sz), err(2 * sz);
         Matf J(2 * sz, 3);
@@ -260,7 +260,7 @@ namespace open3DCV {
             {
                 int ind_cam = graph.tracks_[i][j].index();
                 int ind_cam_arr = graph.index(ind_cam);
-                poses[j] = graph.K_[ind_cam_arr] * graph.Rt_[ind_cam_arr];
+                poses[j] = graph.intrinsics_mat_[ind_cam_arr] * graph.extrinsics_mat_[ind_cam_arr];
                 pts[j] = graph.tracks_[i][j].coords();
                 Vec3f pt3d;
                 triangulate_nonlinear(poses, pts, pt3d);
@@ -351,7 +351,7 @@ namespace open3DCV {
         vector<Mat34f> poses(ncams);
         for (int i = 0; i < ncams; ++i)
         {
-            poses[i] = graph.K_[i] * graph.Rt_[i];
+            poses[i] = graph.intrinsics_mat_[i] * graph.extrinsics_mat_[i];
         }
         
         float error = 0.0f, err = 0.0f;

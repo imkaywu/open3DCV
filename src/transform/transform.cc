@@ -22,5 +22,10 @@ namespace open3DCV
         return Rt_inv;
     }
     
+//    Vec3f angle_axis_rotate(const Vec3f& om, const Vec3f& pt)
+//    {
+//        
+//    }
+    
     
 }

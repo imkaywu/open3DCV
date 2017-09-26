@@ -12,14 +12,19 @@ namespace open3DCV
         init(pair);
     }
     
+    Graph::~Graph()
+    {
+        // no op
+    }
+    
     void Graph::init(const Pair& pair)
     {
         ncams_ = 2;
         ind_cam_ = pair.ind_cam_;
         F_ = pair.F_;
         E_ = pair.E_;
-        K_ = pair.K_;
-        Rt_ = pair.Rt_;
+        intrinsics_mat_ = pair.intrinsics_mat_;
+        extrinsics_mat_ = pair.extrinsics_mat_;
         
         const size_t nmatches = pair.matches_.size();
         tracks_.resize(nmatches);
@@ -32,11 +37,6 @@ namespace open3DCV
         structure_points_.resize(nmatches);
     }
     
-    Graph::~Graph()
-    {
-        // no op
-    }
-    
     int Graph::index(int icam) const
     {
         for (int i = 0; i < ncams_; ++i)
@@ -45,5 +45,10 @@ namespace open3DCV
                 return i;
         }
         return -1;
+    }
+    
+    int Graph::size() const
+    {
+        return ncams_;
     }
 }

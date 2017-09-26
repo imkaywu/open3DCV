@@ -64,7 +64,7 @@ namespace open3DCV
             }
         
         vector<Mat34f> poses(2);
-        poses[0].block<3, 3>(0, 0) = pair.K_[0] * Mat3f::Identity();
+        poses[0].block<3, 3>(0, 0) = pair.intrinsics_mat_[0] * Mat3f::Identity();
         poses[0].block<3, 1>(0, 3).setZero();
         
         const int nmatches = static_cast<int>(pair.matches_.size());
@@ -73,7 +73,7 @@ namespace open3DCV
         vector<int> count(4);
         for (int i = 0; i < 4; ++i)
         {
-            poses[1] = pair.K_[1] * Rts[i];
+            poses[1] = pair.intrinsics_mat_[1] * Rts[i];
             triangulate_nonlinear(poses, pair.matches_, pts3d);
             
             count[i] = 0;
@@ -87,7 +87,7 @@ namespace open3DCV
         
         vector<size_t> idx;
         idx = sort_indexes(count);
-        pair.Rt_[1] = Rts[idx[0]];
+        pair.extrinsics_mat_[1] = Rts[idx[0]];
     }
     
 }

@@ -18,8 +18,8 @@ namespace open3DCV
         std::vector<std::pair<Vec2f, Vec2f> > matches_;
         Mat3f F_;
         Mat3f E_;
-        std::vector<Mat3f> K_;
-        std::vector<Mat34f> Rt_;
+        std::vector<Mat3f> intrinsics_mat_;
+        std::vector<Mat34f> extrinsics_mat_;
         
     private:
         void init(const std::vector<int>& ind_cam);

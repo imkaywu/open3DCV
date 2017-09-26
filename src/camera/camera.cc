@@ -71,7 +71,6 @@ namespace open3DCV
         intrinsics_[1] = K_(1, 1);
         intrinsics_[2] = K_(0, 2);
         intrinsics_[3] = K_(1, 2);
-        intrinsics_[4] = K_(0, 1);
         
         irodrigues(om_, nullptr, R_);
         
@@ -92,7 +91,7 @@ namespace open3DCV
         }
         else
         {
-            K_ << intrinsics_[0], intrinsics_[4], intrinsics_[2],
+            K_ << intrinsics_[0], 0,              intrinsics_[2],
                   0,              intrinsics_[1], intrinsics_[3],
                   0,              0,               1;
             

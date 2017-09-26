@@ -16,14 +16,15 @@ namespace open3DCV
         
         void init(const Pair& pair);
         int index(int icam) const;
+        int size() const;
         
         int ncams_;
         std::vector<int> ind_cam_;
         Mat3f F_;
         Mat3f E_;
         float f_;
-        std::vector<Mat3f> K_;
-        std::vector<Mat34f> Rt_;
+        std::vector<Mat3f> intrinsics_mat_;
+        std::vector<Mat34f> extrinsics_mat_;
         std::vector<Track> tracks_;
         std::vector<Structure_Point> structure_points_;
         

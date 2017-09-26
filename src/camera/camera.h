@@ -54,7 +54,7 @@ private:
     Mat3f R_; // rotation
     Vec3f om_; // axis-angle
     Vec3f t_; // translation
-    std::vector<float> intrinsics_; // intrinsic params: f_x, f_y, c_x, c_y, alpha
+    std::vector<float> intrinsics_; // intrinsic params: f_x, f_y, c_x, c_y
     std::vector<float> extrinsics_; // extrinsic params: om(0), om(1), om(2), t(0), t(1), t(2);
     
     // currently not used, from PMVS
