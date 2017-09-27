@@ -17,6 +17,7 @@ namespace open3DCV
         void init(const Pair& pair);
         int index(int icam) const;
         int size() const;
+        static std::vector<int> intersect(const std::vector<Track>& tracks1, const std::vector<Track>& tracks2);
         
         int ncams_;
         std::vector<int> ind_cam_;
@@ -27,7 +28,6 @@ namespace open3DCV
         std::vector<Mat34f> extrinsics_mat_;
         std::vector<Track> tracks_;
         std::vector<Structure_Point> structure_points_;
-        
     };
 }
 

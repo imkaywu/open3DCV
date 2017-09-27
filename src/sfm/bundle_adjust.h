@@ -105,15 +105,17 @@ namespace open3DCV
             
             // apply distortion to the normalized points to get (xd, yd)
             // do something for zero distortion
-            apply_radio_distortion_camera_intrinsics(focal_length,
-                                                     focal_length,
-                                                     principal_point_x,
-                                                     principal_point_y,
-                                                     k1, k2, k3,
-                                                     p1, p2,
-                                                     xn, yn,
-                                                     &predicted_x,
-                                                     &predicted_y);
+//            apply_radio_distortion_camera_intrinsics(focal_length,
+//                                                     focal_length,
+//                                                     principal_point_x,
+//                                                     principal_point_y,
+//                                                     k1, k2, k3,
+//                                                     p1, p2,
+//                                                     xn, yn,
+//                                                     &predicted_x,
+//                                                     &predicted_y);
+            predicted_x = focal_length * xn + principal_point_x;
+            predicted_y = focal_length * yn + principal_point_y;
             
             residules[0] = predicted_x - T(observed_x_);
             residules[1] = predicted_y - T(observed_y_);
@@ -131,6 +133,26 @@ namespace open3DCV
         double observed_x_;
         double observed_y_;
     };
+    
+    vector<Vec3> pack_3d_pts(const Graph&graph)
+    {
+        size_t npts = static_cast<size_t>(graph.structure_points_.size());
+        vector<Vec3> pts3d(npts);
+        for (int i = 0; i < npts; ++i)
+        {
+            pts3d[i] = graph.structure_points_[i].coords().cast<double>();
+        }
+        
+        return pts3d;
+    }
+    
+    void unpack_3d_pts(Graph &graph, const vector<Vec3>& pts3d)
+    {
+        for (int i = 0; i < graph.structure_points_.size(); ++i)
+        {
+            graph.structure_points_[i].coords() = pts3d[i].cast<float>();
+        }
+    }
     
     vector<Vec6> pack_camera_extrinsics(const Graph&graph)
     {
@@ -180,6 +202,26 @@ namespace open3DCV
         }
     }
     
+    Vec8 pack_camera_intrinsics1(const Graph& graph)
+    {
+        Vec8 intrinsics;
+        Mat3 K = graph.intrinsics_mat_[0].cast<double>();
+        intrinsics << K(0, 0), K(0, 2), K(1, 2), 0, 0, 0, 0, 0;
+        return intrinsics;
+    }
+    
+    void unpack_camera_intrinsics1(Graph& graph, const Vec8 &intrinsics)
+    {
+        for (int i = 0; i < graph.intrinsics_mat_.size(); ++i)
+        {
+            Mat3 K;
+            K << intrinsics(OFFSET_FOCAL_LENGTH), 0,                                intrinsics(OFFSET_PRINCIPAL_POINT_X),
+                 0,                               intrinsics(OFFSET_FOCAL_LENGTH),  intrinsics(OFFSET_PRINCIPAL_POINT_Y),
+                 0,                               0,                                1;
+            graph.intrinsics_mat_[i] = K.cast<float>();
+        }
+    }
+    
     void Open3DCVBundleAdjustment(Graph& graph,
                                   const int bundle_intrinsics)
     {
@@ -189,11 +231,15 @@ namespace open3DCV
         // convert camera rotation to angle axis and merge with translation
         vector<Vec6> extrinsics = pack_camera_extrinsics(graph);
         vector<Vec8> intrinsics = pack_camera_intrinsics(graph);
+//        Vec8 intrinsics = pack_camera_intrinsics1(graph);
+        vector<Vec3> pts3d = pack_3d_pts(graph);
         
         // construct the problem
         bool is_camera_locked = false;
-        for (int m = 0; m < graph.tracks_.size(); ++m)
+        for (int m = 0; m < graph.structure_points_.size(); ++m)
         {
+            Vec3& pt3d = pts3d[m];
+            
             for (int n = 0; n < graph.tracks_[m].size(); ++n)
             {
                 Keypoint key = graph.tracks_[m][n];
@@ -202,7 +248,6 @@ namespace open3DCV
                 ceres::CostFunction* cost_function = Open3DCVReprojectionError::create(x, y);
                 
                 int idx = graph.index(key.index());
-                Vec3 pt3d = graph.structure_points_[m].coords().cast<double>();
                 problem.AddResidualBlock(cost_function, NULL, &intrinsics[idx](0), &extrinsics[idx](0), &pt3d(0));
                 
                 // lock the first camera to better deal with scene orientation ambiguity
@@ -219,6 +264,7 @@ namespace open3DCV
         {
             for (int i = 0; i < intrinsics.size(); ++i)
                 problem.SetParameterBlockConstant(&intrinsics[i](0));
+//            problem.SetParameterBlockConstant(&intrinsics(0));
         }
         else
         {
@@ -235,6 +281,10 @@ namespace open3DCV
             MAYBE_SET_CONSTANT(BUNDLE_TANGENTIAL_P1,   OFFSET_P1);
             MAYBE_SET_CONSTANT(BUNDLE_TANGENTIAL_P2,   OFFSET_P2);
 #undef MAYBE_SET_CONSTANT
+//            constant_intrinsics.push_back(OFFSET_K1);
+//            constant_intrinsics.push_back(OFFSET_K2);
+//            constant_intrinsics.push_back(OFFSET_P1);
+//            constant_intrinsics.push_back(OFFSET_P2);
             
             // always set K3 constant, it's not used at the moment
             constant_intrinsics.push_back(OFFSET_K3);
@@ -243,6 +293,7 @@ namespace open3DCV
             
             for (int i = 0; i < intrinsics.size(); ++i)
                 problem.SetParameterization(&intrinsics[i](0), subset_parameterizaiton);
+//            problem.SetParameterization(&intrinsics(0), subset_parameterizaiton);
         }
         
         // configure the solver
@@ -257,11 +308,12 @@ namespace open3DCV
         // solve
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
-//        std::cout << summary.FullReport() << "\n";
+        std::cout << summary.BriefReport() << std::endl;
         
         // copy intrinsics and extrinsics back
         unpack_camera_extrinsics(graph, extrinsics);
         unpack_camera_intrinsics(graph, intrinsics);
+        unpack_3d_pts(graph, pts3d);
     }
 }
 

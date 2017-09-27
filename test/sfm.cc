@@ -99,7 +99,7 @@ int main(const int argc, const char** argv)
         
         // ------ estimate Fundamental matrix ------
         vector<float> params(9);
-        Param_Estimator<std::pair<Vec2f, Vec2f>, float>* fund_esti = new open3DCV::Fundamental_Estimator(1e-8);
+        Param_Estimator<std::pair<Vec2f, Vec2f>, float>* fund_esti = new open3DCV::Fundamental_Estimator(10e-8);
         float ratio_inlier = Ransac<std::pair<Vec2f, Vec2f>, float>::estimate(fund_esti, pair.matches_, params, 0.99, vote_inlier);
         std::cout << "ratio of inliers: " << ratio_inlier << std::endl;
         pair.F_ << params[0], params[3], params[6],
@@ -114,7 +114,6 @@ int main(const int argc, const char** argv)
             draw_matches(images[i], images[i+1], pair.matches_, "matching_inlier"+to_string(i+1)+"_"+to_string(i+2));
         }
         std::cout << "number of matches: " << pair.matches_.size() << std::endl;
-        write_matches("matches.txt", pair.matches_);
         // estimate fundamental matrix accuracy
         float dist = 0;
         for (int m = 0; m < pair.matches_.size(); ++m)
@@ -135,47 +134,16 @@ int main(const int argc, const char** argv)
         pair.update_intrinsics(f, w, h);
         pair.E_ = pair.intrinsics_mat_[1].transpose() * pair.F_ * pair.intrinsics_mat_[0];
         Rt_from_E(pair);
-        Mat34f pose;
-        pose = pair.extrinsics_mat_[1];
-        cout << "pose matrix: " << endl << pose << endl;
         
         // ------ init graph from pair ------
         graph[i].init(pair);
         
         // ------ triangulate ------
-        vector<std::pair<Vec2f, Vec2f> > pts;
-        for (int m = 0; m < graph[i].tracks_.size(); ++m)
-        {
-            std::pair<Vec2f, Vec2f> tmp;
-            tmp.first = graph[i].tracks_[m][0].coords();
-            tmp.second = graph[i].tracks_[m][1].coords();
-            pts.push_back(tmp);
-        }
-        vector<Mat34f> poses(2);
-        poses[0] = pair.intrinsics_mat_[0] * pair.extrinsics_mat_[0];
-        poses[1] = pair.intrinsics_mat_[1] * pair.extrinsics_mat_[1];
-        vector<Vec3f> pts3d(pts.size());
-        triangulate_nonlinear(poses, pts, pts3d);
-        float error = 0.0;
-        for (int m = 0; m < pts3d.size(); ++m)
-        {
-            Vec3f x_homog = poses[0] * pts3d[m].homogeneous();
-            x_homog = x_homog / x_homog(2);
-            Vec2f dx = x_homog.head<2>() - pts[m].first;
-            error += sqrtf(dx.dot(dx));
-            
-            x_homog = poses[1] * pts3d[m].homogeneous();
-            x_homog = x_homog / x_homog(2);
-            dx = x_homog.head<2>() - pts[m].second;
-            error += sqrtf(dx.dot(dx));
-        }
-        cout << "reprojection error: " << error / (2 * pts3d.size()) << endl;
-        
-//        triangulate_nonlinear(graph[i]);
+        triangulate_nonlinear(graph[i]);
         
         // compute reprojection error
-//        float error = reprojection_error(graph[i]);
-//        std::cout << "reprojection error (before bundle adjustment): " << error << std::endl;
+        float error = reprojection_error(graph[i]);
+        std::cout << "reprojection error (before bundle adjustment): " << error << std::endl;
         
         // ------ bundle adjustment ------
         cout << "------ start bundle adjustment ------" << endl;

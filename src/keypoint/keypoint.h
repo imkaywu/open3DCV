@@ -42,6 +42,9 @@ namespace open3DCV {
         const double orientation() const;
         void orientation(const double r_o);
         const int has_orientation() const;
+        
+//        friend std::ostream& operator<<(std::ostream& ostr, const Keypoint& key);
+//        friend std::ofstream& operator<<(std::ofstream& ofstr, const Keypoint& key);
 
     private:
         // The difference between the implemented Keypoint and VLFeat is that the latter assumes that
@@ -75,6 +78,13 @@ namespace open3DCV {
     {
         //no-op
     }
+    
+//    std::ostream& operator<<(std::ostream& ofstr, const Keypoint& key)
+//    {
+//        const Vec2f& x = key.coords();
+//        ofstr << x(0) << " " << x(1) << " ";
+//        return ofstr;
+//    }
 
     inline const Vec2f & Keypoint::coords() const {
         return coords_;

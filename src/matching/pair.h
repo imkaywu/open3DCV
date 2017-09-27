@@ -10,9 +10,12 @@ namespace open3DCV
     class Pair
     {
     public:
-        Pair(const std::vector<int>& ind_cam);
-        Pair(const std::vector<int>& ind_cam, const std::vector<std::pair<Vec2f, Vec2f> >& matches);
+        Pair(const int ind_cam1, const int ind_cam2);
+        Pair(const int ind_cam1, const int ind_cam2, const std::vector<std::pair<Vec2f, Vec2f> >& matches);
         ~Pair();
+        
+        void update_matches(const std::vector<std::pair<Vec2f, Vec2f> >& matches, const int* vote_inlier);
+        void update_intrinsics(const float f, const int w, const int h);
         
         std::vector<int> ind_cam_;
         std::vector<std::pair<Vec2f, Vec2f> > matches_;
@@ -22,7 +25,7 @@ namespace open3DCV
         std::vector<Mat34f> extrinsics_mat_;
         
     private:
-        void init(const std::vector<int>& ind_cam);
+        void init(const int ind_cam1, const int ind_cam2);
     };
     
 }

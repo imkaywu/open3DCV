@@ -16,7 +16,7 @@ namespace open3DCV
         Vec3i &color();
         
     protected:
-        Vec3f p_; // The x,y,z coordinates
+        Vec3f p_; // The x,y,z coordinates, better is it's of double
         Vec3i c_; //!< The r,g,b color components (0-255 for each)
         
     };

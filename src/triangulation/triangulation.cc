@@ -167,7 +167,7 @@ namespace open3DCV {
         Matf J(2 * sz, 3);
         err_prev.setOnes();
         err_prev *= numeric_limits<float>::max();
-        const int niters = 10;
+        const int niters = 30;
         for (int i = 0; i < niters; ++i)
         {
             residule(Y, pts, Q, err, J);
@@ -179,7 +179,8 @@ namespace open3DCV {
         }
         
         Vec4f X = T * Y.homogeneous();
-        pt3d = X.block<3, 1>(0, 0).array() / X(3);
+//        pt3d = X.block<3, 1>(0, 0) / X(3);
+        pt3d = X.head<3>() / X(3);
         
         // for debugging
         bool is_debug = false;
@@ -243,14 +244,7 @@ namespace open3DCV {
     
     void triangulate_nonlinear(Graph& graph)
     {
-//        vector<Mat34f> poses(graph.ncams_);
-//        for (int i = 0; i < graph.ncams_; ++i)
-//        {
-//            poses[i] = graph.K_[i] * graph.Rt_[i];
-//        }
-//        triangulate_nonlinear(poses, graph.tracks_, graph.structure_points_);
-        
-        const int ntracks = graph.tracks_.size();
+        const int ntracks = static_cast<int>(graph.tracks_.size());
         for (int i = 0; i < ntracks; ++i)
         {
             const int nkeys = graph.tracks_[i].size();
@@ -258,13 +252,28 @@ namespace open3DCV {
             vector<Vec2f> pts(nkeys);
             for (int j = 0; j < nkeys; ++j)
             {
-                int ind_cam = graph.tracks_[i][j].index();
-                int ind_cam_arr = graph.index(ind_cam);
+                Keypoint key = graph.tracks_[i][j];
+                int ind_cam_arr = graph.index(key.index());
                 poses[j] = graph.intrinsics_mat_[ind_cam_arr] * graph.extrinsics_mat_[ind_cam_arr];
-                pts[j] = graph.tracks_[i][j].coords();
-                Vec3f pt3d;
-                triangulate_nonlinear(poses, pts, pt3d);
-                graph.structure_points_[i].coords() = pt3d;
+                pts[j] = key.coords();
+            }
+            Vec3f pt3d;
+            triangulate_nonlinear(poses, pts, pt3d);
+            graph.structure_points_[i].coords() = pt3d;
+            
+            // for debugging
+            bool is_debug = false;
+            if (is_debug)
+            {
+                float err = 0.0f;
+                for (int i = 0; i < nkeys; ++i)
+                {
+                    Vec3f x_homog = poses[i] * pt3d.homogeneous();
+                    x_homog = x_homog / x_homog(2);
+                    Vec2f dx = x_homog.head<2>() - pts[i];
+                    err += sqrtf(dx.dot(dx));
+                }
+                std::cout << "error (after refinement): " << err << std::endl;
             }
         }
     }

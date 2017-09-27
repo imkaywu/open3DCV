@@ -56,12 +56,14 @@ typedef Eigen::Matrix<double, 9, 1> Vec9;
     typedef Eigen::Matrix<float, 4, 1, Eigen::DontAlign> Vec4f;
     typedef Eigen::Matrix<double, 4, 1, Eigen::DontAlign> Vec4;
     typedef Eigen::Matrix<double, 6, 1, Eigen::DontAlign> Vec6;
+    typedef Eigen::Matrix<float, 8, 1, Eigen::DontAlign> Vec8f;
     typedef Eigen::Matrix<double, 8, 1, Eigen::DontAlign> Vec8;
 #else
     typedef Eigen::Vector2d Vec2;
     typedef Eigen::Vector4f Vec4f;
     typedef Eigen::Vector4d Vec4;
     typedef Eigen::Matrix<double, 6, 1> Vec6;
+    typedef Eigen::Matrix<float, 8, 1> Vec8f;
     typedef Eigen::Matrix<double, 8, 1> Vec8;
 #endif
 

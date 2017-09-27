@@ -14,11 +14,17 @@ namespace open3DCV
     
     Graph::~Graph()
     {
-        // no op
+        ind_cam_.clear();
+        intrinsics_mat_.clear();
+        extrinsics_mat_.clear();
+        tracks_.clear();
+        structure_points_.clear();
     }
     
     void Graph::init(const Pair& pair)
     {
+        const size_t nmatches = pair.matches_.size();
+        
         ncams_ = 2;
         ind_cam_ = pair.ind_cam_;
         F_ = pair.F_;
@@ -26,7 +32,6 @@ namespace open3DCV
         intrinsics_mat_ = pair.intrinsics_mat_;
         extrinsics_mat_ = pair.extrinsics_mat_;
         
-        const size_t nmatches = pair.matches_.size();
         tracks_.resize(nmatches);
         for (size_t i = 0; i < nmatches; ++i)
         {
@@ -49,6 +54,6 @@ namespace open3DCV
     
     int Graph::size() const
     {
-        return ncams_;
+        return static_cast<int>(ind_cam_.size());
     }
 }

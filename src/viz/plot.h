@@ -179,6 +179,28 @@ inline void draw_matches(const Image& img0, const vector<Keypoint> keys0, const 
     else
         img.write(oname + ".jpg");
 }
+    
+inline void draw_matches(const Image& img0, const Image& img1, vector<std::pair<Vec2f, Vec2f> >& matches, const string oname)
+{
+    Image img;
+    img.combine_images(img0, img1);
+    
+    for (int i = 0; i < matches.size(); ++i)
+    {
+        Vec2i pos0, pos1;
+        pos0 = matches[i].first.cast<int>();
+        pos1 = matches[i].second.cast<int>();
+        pos1(0) += img0.width();
+        draw_cross(img, pos0);
+        draw_cross(img, pos1);
+        draw_line(img, pos0, pos1);
+    }
+    
+    if (img.channel() == 1)
+        img.write(oname + ".pgm");
+    else
+        img.write(oname + ".jpg");
+}
 
 template<typename T>
 inline Vec3f pt2slope(const T x1, const T x2)
