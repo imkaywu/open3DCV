@@ -105,17 +105,17 @@ namespace open3DCV
             
             // apply distortion to the normalized points to get (xd, yd)
             // do something for zero distortion
-//            apply_radio_distortion_camera_intrinsics(focal_length,
-//                                                     focal_length,
-//                                                     principal_point_x,
-//                                                     principal_point_y,
-//                                                     k1, k2, k3,
-//                                                     p1, p2,
-//                                                     xn, yn,
-//                                                     &predicted_x,
-//                                                     &predicted_y);
-            predicted_x = focal_length * xn + principal_point_x;
-            predicted_y = focal_length * yn + principal_point_y;
+            apply_radio_distortion_camera_intrinsics(focal_length,
+                                                     focal_length,
+                                                     principal_point_x,
+                                                     principal_point_y,
+                                                     k1, k2, k3,
+                                                     p1, p2,
+                                                     xn, yn,
+                                                     &predicted_x,
+                                                     &predicted_y);
+//            predicted_x = focal_length * xn + principal_point_x;
+//            predicted_y = focal_length * yn + principal_point_y;
             
             residules[0] = predicted_x - T(observed_x_);
             residules[1] = predicted_y - T(observed_y_);

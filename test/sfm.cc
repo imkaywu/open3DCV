@@ -73,7 +73,7 @@ int main(const int argc, const char** argv)
     // -------------------------------------------------
     // 2-view SfM
     // -------------------------------------------------
-    vector<std::pair<Vec2f, Vec2f> > data;
+    vector<std::pair<Vec2f, Vec2f> > data; // variable to store the coordinates of matching features
     vector<Graph> graph(nimages - 1);
     for (int i = 0; i < nimages - 1; ++i)
     {
@@ -101,32 +101,24 @@ int main(const int argc, const char** argv)
         vector<float> params(9);
         Param_Estimator<std::pair<Vec2f, Vec2f>, float>* fund_esti = new open3DCV::Fundamental_Estimator(10e-8);
         float ratio_inlier = Ransac<std::pair<Vec2f, Vec2f>, float>::estimate(fund_esti, pair.matches_, params, 0.99, vote_inlier);
-        std::cout << "ratio of inliers: " << ratio_inlier << std::endl;
+        std::cout << "ratio of matching inliers: " << ratio_inlier << std::endl;
         pair.F_ << params[0], params[3], params[6],
                    params[1], params[4], params[7],
                    params[2], params[5], params[8];
         
         // remove outliers
         pair.update_matches(data, vote_inlier);
+        std::cout << "number of matches: " << pair.matches_.size() << std::endl;
         // visualize matching inliers
         if (is_vis)
         {
             draw_matches(images[i], images[i+1], pair.matches_, "matching_inlier"+to_string(i+1)+"_"+to_string(i+2));
-        }
-        std::cout << "number of matches: " << pair.matches_.size() << std::endl;
-        // estimate fundamental matrix accuracy
-        float dist = 0;
-        for (int m = 0; m < pair.matches_.size(); ++m)
-        {
-            std::pair<Vec2f, Vec2f> pair_match = pair.matches_[m];
-            dist += pair_match.second.homogeneous().dot(pair.F_ * pair_match.first.homogeneous());
         }
         // visualize epipolar geometry
         if (is_vis)
         {
             draw_epipolar_geometry(images[i], images[i+1], pair.F_, pair.matches_, "epipolar"+to_string(i+1)+"_"+to_string(i+2));
         }
-        cout << "Fundamental matrix dist: " << dist / pair.matches_.size() << endl;
         
         // ------ estimate relative pose ------
         const float f = 719.5459;
