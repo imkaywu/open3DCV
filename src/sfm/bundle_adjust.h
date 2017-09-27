@@ -202,26 +202,6 @@ namespace open3DCV
         }
     }
     
-    Vec8 pack_camera_intrinsics1(const Graph& graph)
-    {
-        Vec8 intrinsics;
-        Mat3 K = graph.intrinsics_mat_[0].cast<double>();
-        intrinsics << K(0, 0), K(0, 2), K(1, 2), 0, 0, 0, 0, 0;
-        return intrinsics;
-    }
-    
-    void unpack_camera_intrinsics1(Graph& graph, const Vec8 &intrinsics)
-    {
-        for (int i = 0; i < graph.intrinsics_mat_.size(); ++i)
-        {
-            Mat3 K;
-            K << intrinsics(OFFSET_FOCAL_LENGTH), 0,                                intrinsics(OFFSET_PRINCIPAL_POINT_X),
-                 0,                               intrinsics(OFFSET_FOCAL_LENGTH),  intrinsics(OFFSET_PRINCIPAL_POINT_Y),
-                 0,                               0,                                1;
-            graph.intrinsics_mat_[i] = K.cast<float>();
-        }
-    }
-    
     void Open3DCVBundleAdjustment(Graph& graph,
                                   const int bundle_intrinsics)
     {
@@ -231,12 +211,11 @@ namespace open3DCV
         // convert camera rotation to angle axis and merge with translation
         vector<Vec6> extrinsics = pack_camera_extrinsics(graph);
         vector<Vec8> intrinsics = pack_camera_intrinsics(graph);
-//        Vec8 intrinsics = pack_camera_intrinsics1(graph);
         vector<Vec3> pts3d = pack_3d_pts(graph);
         
         // construct the problem
         bool is_camera_locked = false;
-        for (int m = 0; m < graph.structure_points_.size(); ++m)
+        for (int m = 0; m < pts3d.size(); ++m)
         {
             Vec3& pt3d = pts3d[m];
             
@@ -264,7 +243,6 @@ namespace open3DCV
         {
             for (int i = 0; i < intrinsics.size(); ++i)
                 problem.SetParameterBlockConstant(&intrinsics[i](0));
-//            problem.SetParameterBlockConstant(&intrinsics(0));
         }
         else
         {
@@ -281,10 +259,6 @@ namespace open3DCV
             MAYBE_SET_CONSTANT(BUNDLE_TANGENTIAL_P1,   OFFSET_P1);
             MAYBE_SET_CONSTANT(BUNDLE_TANGENTIAL_P2,   OFFSET_P2);
 #undef MAYBE_SET_CONSTANT
-//            constant_intrinsics.push_back(OFFSET_K1);
-//            constant_intrinsics.push_back(OFFSET_K2);
-//            constant_intrinsics.push_back(OFFSET_P1);
-//            constant_intrinsics.push_back(OFFSET_P2);
             
             // always set K3 constant, it's not used at the moment
             constant_intrinsics.push_back(OFFSET_K3);
@@ -293,7 +267,6 @@ namespace open3DCV
             
             for (int i = 0; i < intrinsics.size(); ++i)
                 problem.SetParameterization(&intrinsics[i](0), subset_parameterizaiton);
-//            problem.SetParameterization(&intrinsics(0), subset_parameterizaiton);
         }
         
         // configure the solver
