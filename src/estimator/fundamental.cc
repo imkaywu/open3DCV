@@ -7,7 +7,7 @@ using Eigen::JacobiSVD;
 
 namespace open3DCV
 {
-Fundamental_Estimator::Fundamental_Estimator() : Param_Estimator<pair<Vec2f, Vec2f>, float>(7, 9), error_thresh_(0.05)
+Fundamental_Estimator::Fundamental_Estimator() : Param_Estimator<pair<Vec2f, Vec2f>, float>(7, 9), error_thresh_(1e-6)
 {
     // no-opt
 }
@@ -91,14 +91,13 @@ void Fundamental_Estimator::fund_seven_pts (const std::vector<Vec2f>& x1, const 
         return;
     }
     // point normalization, not working?
-//    vector<Vec2f> nx1, nx2;
-//    Mat3f T1, T2;
-//    T1 = normalize_pts<Vec2f>(x1, nx1);
-//    T2 = normalize_pts<Vec2f>(x2, nx2);
+    vector<Vec2f> nx1, nx2;
+    Mat3f T1 = normalize_pts<Vec2f>(x1, nx1);
+    Mat3f T2 = normalize_pts<Vec2f>(x2, nx2);
     
     Mat2Xf matx1, matx2;
-    vector2mat<Vec2f, Mat2Xf>(x1, matx1);
-    vector2mat<Vec2f, Mat2Xf>(x2, matx2);
+    vector2mat<Vec2f, Mat2Xf>(nx1, matx1);
+    vector2mat<Vec2f, Mat2Xf>(nx2, matx2);
 
     // construct the A matrix in Af = 0
     Matf A(9, 7);
@@ -111,7 +110,7 @@ void Fundamental_Estimator::fund_seven_pts (const std::vector<Vec2f>& x1, const 
          matx1.row(0).array(),
          matx1.row(1).array(),
          Matf::Ones(1, 7);
-    A = A.transpose().eval(); // transposeInPlace();
+    A = A.transpose().eval();
 //    std::cout << "A: " << std::endl << A << std::endl;
     
     // solving for nullspace of A to get two F
@@ -157,7 +156,7 @@ void Fundamental_Estimator::fund_seven_pts (const std::vector<Vec2f>& x1, const 
     // check sign consistency
     for (int i = 0; i < roots.size(); ++i)
     {
-        Mat3f Ftmp = (float)roots(i) * Fmat[0] + (1 - (float)roots(i)) * Fmat[1];
+        Mat3f Ftmp = (float)roots(i) * Fmat[0] + (float)(1 - roots(i)) * Fmat[1];
         JacobiSVD<Mat3f> fmatrix_svd(Ftmp.transpose(), Eigen::ComputeFullV);
         Vec3f e1 = fmatrix_svd.matrixV().col(2);
         Mat3Xf l1_ex = CrossProductMatrix(e1) * matx1.colwise().homogeneous(); // lines connecting of x1 and e1
@@ -165,7 +164,7 @@ void Fundamental_Estimator::fund_seven_pts (const std::vector<Vec2f>& x1, const 
         Vecf s = (l1_Fx.array() * l1_ex.array()).colwise().sum();
         if ((s.array() > 0).all() || (s.array() < 0).all())
         {
-            F.push_back(Ftmp);
+            F.push_back(T2.transpose() * Ftmp * T1);
         }
     }
 }

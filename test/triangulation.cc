@@ -1,6 +1,6 @@
-#include "triangulation/triangulation.h"
-
 #include "math/numeric.h"
+#include "triangulation/triangulation.h"
+#include "io/match_io.h"
 
 using namespace std;
 using namespace open3DCV;
@@ -11,26 +11,53 @@ int main(const int argc, const char** argv)
     vector<Mat34f> poses(npts);
     Mat3f K, R;
     Vec3f t;
-    K << 1520.400000, 0.000000, 302.320000,
-         0.000000, 1525.900000, 246.870000,
-         0.000000, 0.000000, 1.000000;
-    R << 0.02187598221295043000, 0.98329680886213122000, -0.18068986436368856000,
-         0.99856708067455469000, -0.01266114646423925600, 0.05199500709979997700,
-         0.04883878372068499500, -0.18156839221560722000, -0.98216479887691122000;
-    t << -0.0726637729648, 0.0223360353405, 0.614604845959;
+    float f = 719.5459;
+    const int w = 480, h = 640;
+    K << f,   0.0, w/2.0,
+         0.0, f,   h/2.0,
+         0.0, 0.0, 1.0;
+    R << 1, 0, 0,
+         0, 1, 0,
+         0, 0, 1;
+    t << 0, 0, 0;
     poses[0].block<3, 3>(0, 0) = K * R;
     poses[0].block<3, 1>(0, 3) = K * t;
     
-    K << 1520.400000, 0.000000, 302.320000,
-         0.000000, 1525.900000, 246.870000,
-         0.000000, 0.000000, 1.000000;
-    R << -0.03472199972816788400, 0.98429285136236500000, -0.17309524976677537000,
-         0.93942192751145170000, -0.02695166652093134900, -0.34170169707277304000,
-         -0.34099974317519038000, -0.17447403941185566000, -0.92373047190496216000;
-    t << -0.0746307029819, 0.0338148092011, 0.600850565131;
+    R << 0.98161, -0.0989498,   0.163251,
+    0.102381,   0.994664, -0.0127199,
+    -0.161121,  0.0291998,   0.986503;
+    t << -0.999372, 0.00983581, -0.0340434;
     poses[1].block<3, 3>(0, 0) = K * R;
     poses[1].block<3, 1>(0, 3) = K * t;
+//    poses[1] << 0.98161, -0.0989498,   0.163251,  -0.999372,
+//    0.102381,   0.994664, -0.0127199, 0.00983581,
+//    -0.161121,  0.0291998,   0.986503, ;
+//    poses[1] = K * poses[1];
     
+    // read matching
+    std::vector<std::pair<Vec2f, Vec2f> > matches;
+    read_matches("matches.txt", matches);
+    
+    vector<Vec3f> pt3d(matches.size());
+    triangulate_nonlinear(poses, matches, pt3d);
+    float error = 0.0f;
+    for (int i = 0; i < pt3d.size(); ++i)
+    {
+        Vec3f x;
+        x = poses[0] * pt3d[i].homogeneous();
+        x = x / x(2);
+        Vec2f dx = x.head<2>() - matches[i].first;
+        error += sqrt(dx.dot(dx));
+        
+        x = poses[1] * pt3d[i].homogeneous();
+        x = x / x(2);
+        dx = x.head<2>() - matches[i].second;
+        
+        error += sqrt(dx.dot(dx));
+    }
+    cout << "reprojection error: " << error / (2 * pt3d.size()) << endl;
+    
+    /* middlebury dataset
     Vec2f xrange(-0.073568, 0.028855), yrange(0.021728, 0.181892), zrange(-0.012445, 0.062736);
     srand (time(NULL));
     
@@ -78,4 +105,5 @@ int main(const int argc, const char** argv)
     cout << "linear triangulation: " << err[0] / 100 << endl;
     cout << "midpoint triangulation: " << err[1] / 100 << endl;
     cout << "nonlinear triangulation: " << err[2] / 100 << endl;
+     */
 }

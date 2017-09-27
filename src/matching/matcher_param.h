@@ -15,9 +15,9 @@ namespace open3DCV
         int nresults = 2;
         
         Matcher_Param() { };
-        Matcher_Param(const float r_ratio) : ratio(r_ratio) { };
-        Matcher_Param(const float r_ratio, const int r_ndims, const int r_leaf_max_size, const int r_nresults) :
-                      ratio(r_ratio), ndims(r_ndims), leaf_max_size(r_leaf_max_size), nresults(r_nresults) { };
+        Matcher_Param(const float r_ratio, const int r_nmatches) : ratio(r_ratio), nmatches_min(r_nmatches) { };
+        Matcher_Param(const float r_ratio, const int r_nmatches, const int r_ndims, const int r_leaf_max_size, const int r_nresults) :
+                      ratio(r_ratio), nmatches_min(r_nmatches), ndims(r_ndims), leaf_max_size(r_leaf_max_size), nresults(r_nresults) { };
         
     };
 }
