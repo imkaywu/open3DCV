@@ -22,4 +22,4 @@ The implementation of various algorithms have been organized into a list of blog
 The source code and documentation are [available in Github](https://github.com/imkaywu/open3DCV/)
 
 ### Acknowledgements
-open3DCV is an outcome of my Master's work at the HCT lab of University of British Columbia.
+open3DCV is one of the outcomes of my Master's work at the HCT lab of University of British Columbia.

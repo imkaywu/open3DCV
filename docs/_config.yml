@@ -37,6 +37,9 @@ permalink: none
 # Syntax highlighting
 highlighter: rouge
 
+# Enable mathjax
+mathjax: true
+
 # Since these are pages, it doesn't really matter
 future: true
 
