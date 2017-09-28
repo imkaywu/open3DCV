@@ -48,12 +48,14 @@ code {
 
 
 #navigation {
-    font-size: 0.9em;
+    font-size: 1em; /* navigation text font size */
 }
 
 #navigation li a {
     padding-left: 10px;
     padding-right: 10px;
+    padding-bottom: 4px;
+    padding-top: 4px;
 }
 
 #navigation .nav-header {
