@@ -14,4 +14,4 @@ open3DCV is a simple, lightweight 3D computer vision library with minimum third-
 Please create an issue or pull request for detected/fixed bugs, or send questions to this email: kaywu@ece.ubc.ca
 
 ## License
-MIT
+New BSD License
