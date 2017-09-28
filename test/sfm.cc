@@ -172,10 +172,10 @@ int main(const int argc, const char** argv)
         error = reprojection_error(global_graph);
         std::cout << "reprojection error (after bundle adjustment): " << error << std::endl;
     }
-    return 0;
     
     // -------------------------------------------------
     // Output
     // -------------------------------------------------
     
+    return 0;
 }

@@ -1,9 +1,9 @@
 #include "transform/transform.h"
 #include "sfm/graph.h"
+#include "utils/sort_index.h"
 
 using std::vector;
 using std::pair;
-using std::set;
 
 namespace open3DCV
 {
@@ -25,8 +25,13 @@ namespace open3DCV
         E_ = graph.E_;
         intrinsics_mat_ = graph.intrinsics_mat_;
         extrinsics_mat_ = graph.extrinsics_mat_;
-        tracks_ = graph.tracks_;
-        structure_points_ = graph.structure_points_;
+        tracks_.resize(graph.tracks_.size(), Track());
+        structure_points_.resize(graph.tracks_.size(), Structure_Point());
+        for (int i = 0; i < graph.tracks_.size(); ++i)
+        {
+            tracks_[i] = graph.tracks_[i];
+            structure_points_[i] = graph.structure_points_[i];
+        }
     }
     
     Graph::~Graph()
@@ -107,7 +112,7 @@ namespace open3DCV
         for (int i = 0; i < track2.size(); ++i)
         {
             auto iter = std::find(ind.begin(), ind.end(), i);
-            if (iter != ind.end())
+            if (iter == ind.end())
                 track1.add_keypoint(track2[i]);
         }
     }
@@ -117,13 +122,13 @@ namespace open3DCV
         vector<int>::iterator iter;
         
         // find overlapping cameras
-        vector<int> cams_common;
+        vector<int> cams_common(std::max(graph1.ncams_, graph2.ncams_));
         iter = std::set_intersection(graph1.cams_.begin(), graph1.cams_.end(), graph2.cams_.begin(), graph2.cams_.end(), cams_common.begin());
         cams_common.resize(iter - cams_common.begin());
         
         // find distinct cameras
-        vector<int> cams_diff;
-        iter = std::set_difference(graph1.cams_.begin(), graph1.cams_.end(), graph2.cams_.begin(), graph2.cams_.end(), cams_diff.begin());
+        vector<int> cams_diff(std::max(graph1.ncams_, graph2.ncams_));
+        iter = std::set_difference(graph2.cams_.begin(), graph2.cams_.end(), graph1.cams_.begin(), graph1.cams_.end(), cams_diff.begin());
         cams_diff.resize(iter - cams_diff.begin());
         
         if (cams_common.empty())
@@ -132,8 +137,8 @@ namespace open3DCV
         // merge the camera intrinsic and extrinsic parameters
         int ind_cam1 = graph1.index(cams_common[0]);
         int ind_cam2 = graph2.index(cams_common[0]);
-        Mat34f Rt1 = graph1.intrinsics_mat_[ind_cam1] * graph1.extrinsics_mat_[ind_cam1];
-        Mat34f Rt2 = graph2.intrinsics_mat_[ind_cam2] * graph2.extrinsics_mat_[ind_cam2];
+        Mat34f Rt1 = graph1.extrinsics_mat_[ind_cam1];
+        Mat34f Rt2 = graph2.extrinsics_mat_[ind_cam2];
         Mat34f Rt21 = concat_Rt(inv_Rt(Rt1), Rt2);
         for (int i = 0; i < graph2.structure_points_.size(); ++i)
         {
@@ -144,34 +149,47 @@ namespace open3DCV
         for (int i = 0; i < cams_diff.size(); ++i)
         {
             graph1.cams_.push_back(cams_diff[i]);
-            graph1.intrinsics_mat_[graph1.ncams_+i] = graph2.intrinsics_mat_[graph2.index(cams_diff[i])];
-            graph1.extrinsics_mat_[graph1.ncams_+i] = concat_Rt(graph2.extrinsics_mat_[graph2.index(cams_diff[i])], Rt21t);
+            graph1.intrinsics_mat_.push_back(graph2.intrinsics_mat_[graph2.index(cams_diff[i])]);
+            graph1.extrinsics_mat_.push_back(concat_Rt(graph2.extrinsics_mat_[graph2.index(cams_diff[i])], Rt21t));
         }
         graph1.ncams_ = static_cast<int>(graph1.cams_.size());
+        vector<size_t> indexes;
+        sort<int>(graph1.cams_, graph1.cams_, indexes);
+        reorder<Mat3f>(graph1.intrinsics_mat_, indexes, graph1.intrinsics_mat_);
+        reorder<Mat34f>(graph1.extrinsics_mat_, indexes, graph1.extrinsics_mat_);
         
-        for (int i = 0; i < graph1.tracks_.size(); ++i)
+        const int ntracks = static_cast<int>(graph1.tracks_.size());
+        for (int j = 0; j < graph2.tracks_.size(); ++j)
         {
-            for (int j = 0; j < graph2.tracks_.size(); ++j)
+            Track& track2 = graph2.tracks_[j];
+            bool is_track_connected = false;
+            for (int i = 0; i < ntracks; ++i)
             {
+                Track& track1 = graph1.tracks_[i];
                 vector<pair<int, int> > feats_common;
-                Track::find_overlapping_keypoints(graph1.tracks_[i], graph2.tracks_[j], feats_common);
-                // find non-overlapping feature tracks from common cameras
-                if (feats_common.empty())
-                {
-                    graph1.add_track(graph2.tracks_[j]);
-                    graph1.structure_points_.push_back(graph2.structure_points_[j]);
-                }
+                Track::find_overlapping_keypoints(track1, track2, feats_common);
                 // find overlapping feature tracks from common cameras
-                else
+                if (!feats_common.empty())
                 {
-                    Graph::merge_tracks(graph1.tracks_[i], graph2.tracks_[j], feats_common);
-                    // check if the structur_points are close
-                    std::cout << "graph1 structure_point: " << std::endl << graph1.structure_points_[i].coords() << std::endl;
-                    std::cout << "graph2 structure_point: " << std::endl << graph2.structure_points_[j].coords() << std::endl;
+                    Graph::merge_tracks(track1, track2, feats_common);
+                    is_track_connected = true;
+                    // check if the structur_points are close, for debug purpose
+                    if (false)
+                    {
+                        std::cout << "graph1 structure_point: " << std::endl << graph1.structure_points_[i].coords() << std::endl;
+                        std::cout << "graph2 structure_point: " << std::endl << graph2.structure_points_[j].coords() << std::endl;
+                    }
+                    break;
                 }
             }
+            // find non-overlapping feature tracks from common cameras
+            if (!is_track_connected)
+            {
+                graph1.add_track(track2);
+                graph1.add_struct_pt(graph2.structure_points_[j]);
+            }
         }
-        
+
         // find new features from non-overlapping cameras, this part is not needed for now
     }
 }

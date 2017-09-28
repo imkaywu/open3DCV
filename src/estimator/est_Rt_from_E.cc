@@ -2,6 +2,7 @@
 #include "estimator/est_Rt_from_E.h"
 #include "transform/projection.h"
 #include "triangulation/triangulation.h"
+#include "utils/sort_index.h"
 
 using std::vector;
 using Eigen::JacobiSVD;
@@ -84,10 +85,9 @@ namespace open3DCV
                     ++count[i];
             }
         }
-        
         vector<size_t> idx;
-        idx = sort_indexes(count);
-        pair.extrinsics_mat_[1] = Rts[idx[0]];
+        sort<int>(count, count, idx); // sort in ascending order
+        pair.extrinsics_mat_[1] = Rts[idx[3]];
     }
     
 }

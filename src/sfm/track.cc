@@ -5,36 +5,45 @@ using std::pair;
 
 namespace open3DCV
 {
-    Track::Track()
+    Track::Track() : keys_(0, Keypoint())
     {
         // no op
     }
     
     Track::Track(const Track& track)
     {
-        keys_ = track.keys_;
+        keys_.resize(track.size(), Keypoint());
+        for (int i = 0; i < track.size(); ++i)
+            keys_[i] = track[i];
     }
     
     Track& Track::operator=(const Track& track)
     {
-        keys_ = track.keys_;
+        keys_.resize(track.size(), Keypoint());
+        for (int i = 0; i < track.size(); ++i)
+            keys_[i] = track[i];
         return *this;
     }
     
-    void Track::add_keypoint(const Keypoint &k) {
-        keys_.push_back(k);
+    Track::~Track()
+    {
+        keys_.clear();
     }
     
-    void Track::rm_keypoint(unsigned int index) {
+    void Track::add_keypoint(const Keypoint &key) {
+        keys_.push_back(key);
+    }
+    
+    void Track::rm_keypoint(int index) {
         keys_.erase(keys_.begin() + index);
     }
     
-    const Keypoint &Track::operator[](unsigned int index) const {
+    const Keypoint &Track::operator[](int index) const {
         return keys_[index];
     }
     
-    unsigned int Track::size() const {
-        return static_cast<unsigned int>(keys_.size());
+    int Track::size() const {
+        return static_cast<int>(keys_.size());
     }
     
     int Track::has_overlapping_keypoints(const Track& track1, const Track& track2)
@@ -54,7 +63,7 @@ namespace open3DCV
     {
         ind_key.clear();
         for (int i = 0; i < track1.size(); ++i)
-            for (int j = 0; j < track2.size(); ++i)
+            for (int j = 0; j < track2.size(); ++j)
                 if (Keypoint::is_identical(track1[i], track2[j]))
                 {
                     ind_key.push_back(pair<int, int>(i, j));

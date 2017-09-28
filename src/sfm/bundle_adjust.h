@@ -249,7 +249,7 @@ namespace open3DCV
             if (!(bundle_intrinsics & bundle_enum)) { \
                 constant_intrinsics.push_back(offset); \
             }
-            MAYBE_SET_CONSTANT(BUNDLE_FOCAL_LENGTH,    OFFSET_FOCAL_LENGTH);
+//            MAYBE_SET_CONSTANT(BUNDLE_FOCAL_LENGTH,    OFFSET_FOCAL_LENGTH);
             MAYBE_SET_CONSTANT(BUNDLE_PRINCIPAL_POINT, OFFSET_PRINCIPAL_POINT_X);
             MAYBE_SET_CONSTANT(BUNDLE_PRINCIPAL_POINT, OFFSET_PRINCIPAL_POINT_Y);
             MAYBE_SET_CONSTANT(BUNDLE_RADIAL_K1,       OFFSET_K1);

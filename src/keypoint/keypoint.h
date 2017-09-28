@@ -20,26 +20,26 @@ namespace open3DCV {
     // for SfM, index_ must be set, id_ is optional
     class Keypoint {
     public:
+        Keypoint();
         Keypoint(const Vec2f &r_x);
         Keypoint(const Vec2f &r_x, unsigned int r_i);
         Keypoint(const Vec2f &r_x, unsigned int r_i, const Vec3i &r_c);
         Keypoint(const Vec2f &r_x, const float r_s, const float r_o);
         Keypoint(const Keypoint& key);
+        Keypoint& operator=(const Keypoint& key);
         virtual ~Keypoint() { };
         
-        Keypoint& operator=(const Keypoint& key);
-        
         const Vec2f &coords() const;
-        void coords(const Vec2f r_coords);
-        const unsigned int index() const;
-        void index(const unsigned int r_i);
-        const Vec3i &color() const;
-        void color(const Vec3i r_c);
-        const double scale() const;
-        void scale(const double r_s);
+        Vec2f& coords();
+        const unsigned int& index() const;
+        unsigned int& index();
+        const Vec3i& color() const;
+        Vec3i& color();
+        const double& scale() const;
+        double& scale();
         const int has_scale() const;
-        const double orientation() const;
-        void orientation(const double r_o);
+        const double& orientation() const;
+        double& orientation();
         const int has_orientation() const;
         
         static int is_identical(const Keypoint& key1, const Keypoint& key2);

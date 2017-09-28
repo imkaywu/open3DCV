@@ -24,6 +24,11 @@ namespace open3DCV
         return *this;
     }
     
+    Structure_Point::~Structure_Point()
+    {
+        // no op
+    }
+    
     const Vec3f &Structure_Point::coords() const
     {
         return p_;

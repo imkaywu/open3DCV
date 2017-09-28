@@ -12,6 +12,7 @@ namespace open3DCV
         Structure_Point(const Vec3f &coord);
         Structure_Point(const Vec3f &coord, const Vec3i &color);
         Structure_Point& operator=(const Structure_Point& struct_pt);
+        virtual ~Structure_Point();
         
         const Vec3f &coords() const;
         Vec3f &coords();

@@ -2,6 +2,10 @@
 
 namespace open3DCV
 {
+    Keypoint::Keypoint() : coords_(0,0), scale_(open3DCV_KEYPOINT_VAR), orientation_(open3DCV_KEYPOINT_VAR), index_(open3DCV_KEYPOINT_VAR), color_(0,0,0)
+    {
+        //no-op
+    }
     Keypoint::Keypoint(const Vec2f &r_coords) : coords_(r_coords), scale_(open3DCV_KEYPOINT_VAR), orientation_(open3DCV_KEYPOINT_VAR), index_(open3DCV_KEYPOINT_VAR), color_(0,0,0)
     {
         //no-op
@@ -45,44 +49,44 @@ namespace open3DCV
         return coords_;
     }
     
-    void Keypoint::coords(const Vec2f r_coords) {
-        coords_ = r_coords;
+    Vec2f& Keypoint::coords() {
+        return coords_;
     }
     
-    const unsigned int Keypoint::index() const {
+    const unsigned int& Keypoint::index() const {
         return index_;
     }
     
-    void Keypoint::index(const unsigned int r_i) {
-        index_ = r_i;
+    unsigned int& Keypoint::index() {
+        return index_;
     }
     
     const Vec3i& Keypoint::color() const {
         return color_;
     }
     
-    void Keypoint::color(const Vec3i r_c) {
-        color_ = r_c;
+    Vec3i& Keypoint::color() {
+        return color_;
     }
     
-    const double Keypoint::scale() const {
+    const double& Keypoint::scale() const {
         return scale_;
     }
     
-    void Keypoint::scale(const double r_s) {
-        scale_ = r_s;
+    double& Keypoint::scale() {
+        return scale_;
     }
     
     const int Keypoint::has_scale() const {
         return scale_ != open3DCV_KEYPOINT_VAR;
     }
     
-    const double Keypoint::orientation() const {
+    const double& Keypoint::orientation() const {
         return orientation_;
     }
     
-    void Keypoint::orientation(const double r_o) {
-        orientation_ = r_o;
+    double& Keypoint::orientation() {
+        return orientation_;
     }
     
     const int Keypoint::has_orientation() const {
