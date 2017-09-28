@@ -155,17 +155,17 @@ int main(const int argc, const char** argv)
     for (int i = 1; i < nimages - 1; ++i)
     {
         cout << "*******************************" << endl;
-        cout << " N-View SfM: merging image " << i << endl;
+        cout << " N-View SfM: merging graph 0-" << i << endl;
         cout << "*******************************" << endl;
         // ------ merge graphs ------
         Graph::merge_graph(global_graph, graph[i]);
         
-        // ------ triangulation ------
+        // ------ N-view triangulation ------
         triangulate_nonlinear(global_graph);
         float error = reprojection_error(global_graph);
         std::cout << "reprojection error (before bundle adjustment): " << error << std::endl;
         
-        // ------ bundle adjustment ------
+        // ------ N-view bundle adjustment ------
         cout << "------ start bundle adjustment ------" << endl;
         Open3DCVBundleAdjustment(global_graph, BUNDLE_PRINCIPAL_POINT);
         cout << "------ end bundle adjustment ------" << endl;
