@@ -148,5 +148,34 @@ int main(const int argc, const char** argv)
         data.clear();
     }
     
+    // -------------------------------------------------
+    // N-view SfM
+    // -------------------------------------------------
+    Graph global_graph(graph[0]);
+    for (int i = 1; i < nimages - 1; ++i)
+    {
+        cout << "*******************************" << endl;
+        cout << " N-View SfM: merging image " << i << endl;
+        cout << "*******************************" << endl;
+        // ------ merge graphs ------
+        Graph::merge_graph(global_graph, graph[i]);
+        
+        // ------ triangulation ------
+        triangulate_nonlinear(global_graph);
+        float error = reprojection_error(global_graph);
+        std::cout << "reprojection error (before bundle adjustment): " << error << std::endl;
+        
+        // ------ bundle adjustment ------
+        cout << "------ start bundle adjustment ------" << endl;
+        Open3DCVBundleAdjustment(global_graph, BUNDLE_PRINCIPAL_POINT);
+        cout << "------ end bundle adjustment ------" << endl;
+        error = reprojection_error(global_graph);
+        std::cout << "reprojection error (after bundle adjustment): " << error << std::endl;
+    }
     return 0;
+    
+    // -------------------------------------------------
+    // Output
+    // -------------------------------------------------
+    
 }

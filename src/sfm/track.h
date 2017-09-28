@@ -1,6 +1,7 @@
 #ifndef track_h_
 #define track_h_
 
+#include <set>
 #include "keypoint/keypoint.h"
 
 namespace open3DCV
@@ -8,34 +9,22 @@ namespace open3DCV
     class Track
     {
     public:
-        Track() { };
+        Track();
+        Track(const Track& track);
+        Track& operator=(const Track& track);
         
+        unsigned int size() const; // length of the feature track
+        const Keypoint &operator[](unsigned int index) const;
         void add_keypoint(const Keypoint &k);
         void rm_keypoint(unsigned int index);
-        const Keypoint &operator[](unsigned int index) const;
-        unsigned int size() const; // length of the feature track
+        static int has_overlapping_keypoints(const Track& track1, const Track& track2);
+        static void find_overlapping_keypoints(const Track& track1, const Track& track2, std::vector<std::pair<int, int> >& ind_key);
         
     protected:
-        std::vector<Keypoint> keys; // the collection of keypoints
+        std::set<int> cams_;
+        std::vector<Keypoint> keys_; // the collection of keypoint correspondences
         
     };
-    
-    inline void Track::add_keypoint(const Keypoint &k) {
-        keys.push_back(k);
-    }
-    
-    inline void Track::rm_keypoint(unsigned int index) {
-        keys.erase(keys.begin() + index);
-    }
-    
-    inline const Keypoint &Track::operator[](unsigned int index) const {
-        return keys[index];
-    }
-    
-    inline unsigned int Track::size() const {
-        return static_cast<unsigned int>(keys.size());
-    }
-    
 }
 
 #endif // track_h_

@@ -5,19 +5,19 @@ using std::pair;
 
 namespace open3DCV
 {
-    Pair::Pair(const int ind_cam1, const int ind_cam2)
+    Pair::Pair(const int cam1, const int cam2)
     {
-        init(ind_cam1, ind_cam2);
+        init(cam1, cam2);
     }
     
-    Pair::Pair(const int ind_cam1, const int ind_cam2, const std::vector<std::pair<Vec2f, Vec2f> >& matches) : matches_(matches)
+    Pair::Pair(const int cam1, const int cam2, const std::vector<std::pair<Vec2f, Vec2f> >& matches) : matches_(matches)
     {
-        init(ind_cam1, ind_cam2);
+        init(cam1, cam2);
     }
     
     Pair::~Pair()
     {
-        ind_cam_.clear();
+        cams_.clear();
         matches_.clear();
         intrinsics_mat_.clear();
         extrinsics_mat_.clear();
@@ -43,11 +43,11 @@ namespace open3DCV
         intrinsics_mat_[1] = intrinsics_mat_[0];
     }
     
-    void Pair::init(const int ind_cam1, const int ind_cam2)
+    void Pair::init(const int cam1, const int cam2)
     {
-        ind_cam_.resize(2);
-        ind_cam_[0] = ind_cam1;
-        ind_cam_[1] = ind_cam2;
+        cams_.resize(2);
+        cams_[0] = cam1;
+        cams_[1] = cam2;
         intrinsics_mat_.resize(2);
         for (int i = 0; i < 2; ++i)
         {

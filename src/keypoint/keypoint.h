@@ -4,14 +4,9 @@
 #include "math/numeric.h"
 
 namespace open3DCV {
-    //! Keypoint class
-    /*!
-     * This class encapsulates the data associated with a 2D image keypoint.
-     * This class stores the x and y coordinates of the image location, along
-     * with the index (i) of the image (camera) it is found, and color value
-     * (stored in a 0-255 format).
-     */
-    # define open3DCV_KEYPOINT_VAR -9999
+    
+    #define open3DCV_KEYPOINT_VAR -9999
+    
     enum KeypointType
     {
         INVALID = -1,
@@ -21,14 +16,18 @@ namespace open3DCV {
         SURF = 3,
     };
     
-    // The only two members that must be set are coords_, and keypoint_type_
+    // The only member that must be set is coords_
+    // for SfM, index_ must be set, id_ is optional
     class Keypoint {
     public:
         Keypoint(const Vec2f &r_x);
         Keypoint(const Vec2f &r_x, unsigned int r_i);
         Keypoint(const Vec2f &r_x, unsigned int r_i, const Vec3i &r_c);
         Keypoint(const Vec2f &r_x, const float r_s, const float r_o);
+        Keypoint(const Keypoint& key);
         virtual ~Keypoint() { };
+        
+        Keypoint& operator=(const Keypoint& key);
         
         const Vec2f &coords() const;
         void coords(const Vec2f r_coords);
@@ -43,95 +42,19 @@ namespace open3DCV {
         void orientation(const double r_o);
         const int has_orientation() const;
         
-//        friend std::ostream& operator<<(std::ostream& ostr, const Keypoint& key);
-//        friend std::ofstream& operator<<(std::ofstream& ofstr, const Keypoint& key);
+        static int is_identical(const Keypoint& key1, const Keypoint& key2);
 
     private:
         // The difference between the implemented Keypoint and VLFeat is that the latter assumes that
         // the image origin (top-left corner) has coordinate (0,0) as opposed to (1,1)
-        Vec2f coords_;                       // coordinates
+        Vec2f coords_;                      // coordinates
         unsigned int index_;                // Image index
         Vec3i color_;                       // color
-        double scale_;
-        double orientation_;
-        KeypointType keypoint_type_;
-
+        double scale_;                      // scale
+        double orientation_;                // orientation
+        std::pair<int, int> id_;            // id of the feature, <img_ind, feat_ind>, not used
+        KeypointType keypoint_type_;        // keypoint type, not used
         
     };
-    
-    inline Keypoint::Keypoint(const Vec2f &r_coords) : coords_(r_coords), scale_(open3DCV_KEYPOINT_VAR), orientation_(open3DCV_KEYPOINT_VAR), index_(open3DCV_KEYPOINT_VAR), color_(0,0,0)
-    {
-        //no-op
-    }
-    
-    inline Keypoint::Keypoint(const Vec2f &r_coords, unsigned int r_i) : coords_(r_coords), scale_(open3DCV_KEYPOINT_VAR), orientation_(open3DCV_KEYPOINT_VAR), index_(r_i), color_(0,0,0)
-    {
-        //no-op
-    }
-    
-    inline Keypoint::Keypoint(const Vec2f &r_coords, unsigned int r_i, const Vec3i& r_c) : coords_(r_coords), scale_(open3DCV_KEYPOINT_VAR), orientation_(open3DCV_KEYPOINT_VAR), index_(r_i), color_(r_c)
-    {
-        //no-op
-    }
-    
-    inline Keypoint::Keypoint(const Vec2f &r_coords, const float s, const float o) : coords_(r_coords), scale_(s), orientation_(o)
-    {
-        //no-op
-    }
-    
-//    std::ostream& operator<<(std::ostream& ofstr, const Keypoint& key)
-//    {
-//        const Vec2f& x = key.coords();
-//        ofstr << x(0) << " " << x(1) << " ";
-//        return ofstr;
-//    }
-
-    inline const Vec2f & Keypoint::coords() const {
-        return coords_;
-    }
-    
-    inline void Keypoint::coords(const Vec2f r_coords) {
-        coords_ = r_coords;
-    }
-
-    inline const unsigned int Keypoint::index() const {
-        return index_;
-    }
-    
-    inline void Keypoint::index(const unsigned int r_i) {
-        index_ = r_i;
-    }
-
-    inline const Vec3i& Keypoint::color() const {
-        return color_;
-    }
-    
-    inline void Keypoint::color(const Vec3i r_c) {
-        color_ = r_c;
-    }
-    
-    inline const double Keypoint::scale() const {
-        return scale_;
-    }
-    
-    inline void Keypoint::scale(const double r_s) {
-        scale_ = r_s;
-    }
-    
-    inline const int Keypoint::has_scale() const {
-        return scale_ != open3DCV_KEYPOINT_VAR;
-    }
-    
-    inline const double Keypoint::orientation() const {
-        return orientation_;
-    }
-    
-    inline void Keypoint::orientation(const double r_o) {
-        orientation_ = r_o;
-    }
-    
-    inline const int Keypoint::has_orientation() const {
-        return orientation_ != open3DCV_KEYPOINT_VAR;
-    }
 }
 #endif // keypoint_h

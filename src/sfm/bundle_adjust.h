@@ -114,8 +114,6 @@ namespace open3DCV
                                                      xn, yn,
                                                      &predicted_x,
                                                      &predicted_y);
-//            predicted_x = focal_length * xn + principal_point_x;
-//            predicted_y = focal_length * yn + principal_point_y;
             
             residules[0] = predicted_x - T(observed_x_);
             residules[1] = predicted_y - T(observed_y_);

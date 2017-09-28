@@ -12,18 +12,24 @@ namespace open3DCV
     public:
         Graph();
         Graph(const Pair& pair);
+        Graph(const Graph& graph);
         ~Graph();
         
         void init(const Pair& pair);
         int index(int icam) const;
-        int size() const;
-        static std::vector<int> intersect(const std::vector<Track>& tracks1, const std::vector<Track>& tracks2);
+        int size() const; // number of 3D points
+        void rm_outliers();
+        void add_track(const Track& track);
+        void rm_track(int index);
+        void add_struct_pt(const Structure_Point& struct_pt);
+        void rm_struct_pt(int index);
+        static void merge_graph(Graph& graph1, Graph& graph2);
+        static void merge_tracks(Track& track1, const Track& track2, std::vector<std::pair<int, int> >& ind_key);
         
         int ncams_;
-        std::vector<int> ind_cam_;
+        std::vector<int> cams_;
         Mat3f F_;
         Mat3f E_;
-        float f_;
         std::vector<Mat3f> intrinsics_mat_;
         std::vector<Mat34f> extrinsics_mat_;
         std::vector<Track> tracks_;

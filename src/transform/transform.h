@@ -5,10 +5,9 @@
 
 namespace open3DCV
 {
-    Mat3Xf concat_Rt(const Mat3Xf& outer_Rt, const Mat3Xf& inner_Rt);
-    Mat3Xf inverse_Rt(const Mat3Xf& r_Rt);
-    Vec3f angle_axis_rotate(const Vec3f& om, const Vec3f& pt);
-
+    Mat34f concat_Rt(const Mat34f& outer_Rt, const Mat34f& inner_Rt);
+    Mat34f inv_Rt(const Mat34f& r_Rt);
+    
 }
 
 #endif
