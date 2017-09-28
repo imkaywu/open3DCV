@@ -42,16 +42,16 @@ public:
     void rgb2grey(const Image& img);
     void combine_images(const Image& img1, const Image& img2);
     inline int in_image(const int ind) { return ind < width_ * height_; }
-    int width() const;
-    int height() const;
-    int channel() const;
-    string name() const;
+    const int& width() const;
+    const int& height() const;
+    const int& channel() const;
+    const string& name() const;
     
     Vector3f color(const float fx, const float fy) const;
     Vector3f color(const int ix, const int iy) const;
     
+    const unsigned char operator[](int ind) const;
     unsigned char& operator[](int ind);
-    unsigned char operator[](int ind) const;
     
     // try to make this private
     vector<unsigned char> m_image;
@@ -73,18 +73,14 @@ inline unsigned char& Image::operator[](int ind)
     return m_image[0];
 }
 
-inline unsigned char Image::operator[](int ind) const
+inline const unsigned char Image::operator[](int ind) const
 {
     if (ind > 0 && ind < width_ * height_ * channel_)
         return m_image[ind];
 
     return m_image[0];
 }
-    
-inline string Image::name() const
-{
-    return name_;
-}
+
 } // end of namespace open3DCV
 
 #endif // end of image_hpp

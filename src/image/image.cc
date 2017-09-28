@@ -87,11 +87,13 @@ void Image::free()
     vector<unsigned char>().swap(m_image);
 }
 
-int Image::width() const { return width_; }
+const int& Image::width() const { return width_; }
 
-int Image::height() const { return height_; }
+const int& Image::height() const { return height_; }
     
-int Image::channel() const { return channel_; }
+const int& Image::channel() const { return channel_; }
+    
+const string& Image::name() const { return name_; }
 
 // rgb2gray: https://www.mathworks.com/help/matlab/ref/rgb2gray.html
 void Image::rgb2grey(const Image& img)
