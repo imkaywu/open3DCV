@@ -1,6 +1,6 @@
 # Site title and subtitle. This is used in _includes/header.html
 title: 'open3DCV'
-subtitle: 'Painless documentation for your projects'
+subtitle: 'a lightweight Multiple View Geometry library'
 
 # if you wish to integrate disqus on pages set your shortname here
 disqus_shortname: 'kaystechblog'
