@@ -18,5 +18,8 @@ open3DCV is a Multiple View Geometry library developed by [Kai Wu](https://imkay
 ### Implementation
 The implementation of various algorithms have been organized into a list of blog posts. Please visit the [vision tutorial](https://imkaywu.github.io/tutorials/vision/) page for more details.
 
-### Acknowledgement
+### Download
+The source code and documentation are [available in Github](https://github.com/imkaywu/open3DCV/)
+
+### Acknowledgements
 open3DCV is an outcome of my Master's work at the HCT lab of University of British Columbia.

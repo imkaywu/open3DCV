@@ -1,5 +1,5 @@
 ## Introduction
-open3DCV is a simple, lightweight 3D computer vision library with minimum third-party dependencies. This library includes implementations of many widely used Multiple View Geometry algorithms, some highlights are as follow. Please visit the [website](https://imkaywu.github.io/blog/2017/05/3d-vision-lib/) for more details. Tutorials on the implementation are [here](https://imkaywu.github.io/tutorials/mvg/). More to come~
+open3DCV is a simple, lightweight 3D computer vision library with minimum third-party dependencies. This library includes implementations of many widely used Multiple View Geometry algorithms, some highlights are as follow. Please visit the [website](https://imkaywu.github.io/open3DCV/) for more details. Tutorials on the implementation are [here](https://imkaywu.github.io/tutorials/vision/). More to come~
 
 * Pinhole camera model
 * Feature detector, descriptor extraction

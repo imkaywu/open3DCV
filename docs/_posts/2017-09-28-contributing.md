@@ -2,7 +2,7 @@
 layout: page
 title: "Contributing"
 category: dev
-date: 2017-09-28 11:35:48
+order: 0
 ---
 
 The first step in contributing to the code base is [forking the repo](https://github.com/imkaywu/open3DCV).
