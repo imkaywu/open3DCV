@@ -57,8 +57,8 @@ namespace open3DCV
         tracks_.resize(nmatches);
         for (size_t i = 0; i < nmatches; ++i)
         {
-            tracks_[i].add_keypoint(Keypoint(pair.matches_[i].first, pair.cams_[0]));
-            tracks_[i].add_keypoint(Keypoint(pair.matches_[i].second, pair.cams_[1]));
+            tracks_[i].add_keypoint(Keypoint(pair.matches_[i].point_.first, pair.cams_[0]));
+            tracks_[i].add_keypoint(Keypoint(pair.matches_[i].point_.second, pair.cams_[1]));
         }
         
         structure_points_.resize(nmatches);
@@ -134,23 +134,23 @@ namespace open3DCV
         if (cams_common.empty())
             return;
         
-        // merge the camera intrinsic and extrinsic parameters
+        // merge the camera intrinsic and extrinsic parameters using the first common camera
         int ind_cam1 = graph1.index(cams_common[0]);
         int ind_cam2 = graph2.index(cams_common[0]);
         Mat34f Rt1 = graph1.extrinsics_mat_[ind_cam1];
         Mat34f Rt2 = graph2.extrinsics_mat_[ind_cam2];
-        Mat34f Rt21 = concat_Rt(inv_Rt(Rt1), Rt2);
+        Mat34f Rt21 = concat_Rt(Rt1, inv_Rt(Rt2));
+        Mat34f Rt21_inv = inv_Rt(Rt21);
         for (int i = 0; i < graph2.structure_points_.size(); ++i)
         {
             Vec3f& pt3d = graph2.structure_points_[i].coords();
-            pt3d = Rt21 * pt3d.homogeneous();
+            pt3d = Rt21_inv * pt3d.homogeneous();
         }
-        Mat34f Rt21t = inv_Rt(Rt21);
         for (int i = 0; i < cams_diff.size(); ++i)
         {
             graph1.cams_.push_back(cams_diff[i]);
             graph1.intrinsics_mat_.push_back(graph2.intrinsics_mat_[graph2.index(cams_diff[i])]);
-            graph1.extrinsics_mat_.push_back(concat_Rt(graph2.extrinsics_mat_[graph2.index(cams_diff[i])], Rt21t));
+            graph1.extrinsics_mat_.push_back(concat_Rt(Rt21, graph2.extrinsics_mat_[graph2.index(cams_diff[i])]));
         }
         graph1.ncams_ = static_cast<int>(graph1.cams_.size());
         vector<size_t> indexes;
@@ -176,8 +176,10 @@ namespace open3DCV
                     // check if the structur_points are close, for debug purpose
                     if (false)
                     {
-                        std::cout << "graph1 structure_point: " << std::endl << graph1.structure_points_[i].coords() << std::endl;
-                        std::cout << "graph2 structure_point: " << std::endl << graph2.structure_points_[j].coords() << std::endl;
+                        const Vec3f& pt1 = graph1.structure_points_[i].coords();
+                        const Vec3f& pt2 = graph2.structure_points_[j].coords();
+                        std::cout << "graph1 structure_point: " << std::endl << pt1/pt1(2) << std::endl;
+                        std::cout << "graph2 structure_point: " << std::endl << pt2/pt2(2) << std::endl;
                     }
                     break;
                 }

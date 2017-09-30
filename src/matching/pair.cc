@@ -5,12 +5,18 @@ using std::pair;
 
 namespace open3DCV
 {
+    
+    Pair::Pair() : cams_(-1, -1)
+    {
+        // no op
+    }
+    
     Pair::Pair(const int cam1, const int cam2)
     {
         init(cam1, cam2);
     }
     
-    Pair::Pair(const int cam1, const int cam2, const std::vector<std::pair<Vec2f, Vec2f> >& matches) : matches_(matches)
+    Pair::Pair(const int cam1, const int cam2, const vector<DMatch>& matches) : matches_(matches)
     {
         init(cam1, cam2);
     }
@@ -23,7 +29,7 @@ namespace open3DCV
         extrinsics_mat_.clear();
     }
     
-    void Pair::update_matches(const std::vector<std::pair<Vec2f, Vec2f> >& matches, const int* vote_inlier)
+    void Pair::update_matches(const std::vector<DMatch>& matches, const int* vote_inlier)
     {
         matches_.clear();
         for (int i = 0; i < matches.size(); ++i)
@@ -59,5 +65,10 @@ namespace open3DCV
             extrinsics_mat_[i].block<3, 3>(0, 0).setIdentity();
             extrinsics_mat_[i].block<3, 1>(0, 3).setZero();
         }
+    }
+    
+    bool Pair::operator<(const Pair& rhs) const
+    {
+        return matches_.size() > rhs.matches_.size();
     }
 }

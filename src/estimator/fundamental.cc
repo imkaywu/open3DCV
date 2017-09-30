@@ -7,23 +7,23 @@ using Eigen::JacobiSVD;
 
 namespace open3DCV
 {
-Fundamental_Estimator::Fundamental_Estimator() : Param_Estimator<pair<Vec2f, Vec2f>, float>(7, 9), error_thresh_(1e-6)
+Fundamental_Estimator::Fundamental_Estimator() : Param_Estimator<DMatch, float>(7, 9), error_thresh_(1e-6)
 {
     // no-opt
 }
 
-Fundamental_Estimator::Fundamental_Estimator(const float thresh) : Param_Estimator<pair<Vec2f, Vec2f>, float>(7, 9), error_thresh_(thresh)
+Fundamental_Estimator::Fundamental_Estimator(const float thresh) : Param_Estimator<DMatch, float>(7, 9), error_thresh_(thresh)
 {
     // no-opt
 }
 
-void Fundamental_Estimator::estimate(vector<pair<Vec2f, Vec2f> >& data, vector<float>& params)
+void Fundamental_Estimator::estimate(vector<DMatch>& data, vector<float>& params)
 {
     vector<Vec2f> x1(data.size()), x2(data.size());
     for (int i = 0; i < data.size(); ++i)
     {
-        x1[i] = data[i].first;
-        x2[i] = data[i].second;
+        x1[i] = data[i].point_.first;
+        x2[i] = data[i].point_.second;
     }
     
     if (ndata() == 7)
@@ -48,14 +48,14 @@ void Fundamental_Estimator::estimate(vector<pair<Vec2f, Vec2f> >& data, vector<f
         }
     }
 }
-
-void Fundamental_Estimator::ls_estimate(vector<pair<Vec2f, Vec2f> >& data, vector<float>& params)
+    
+void Fundamental_Estimator::ls_estimate(vector<DMatch>& data, vector<float>& params)
 {
     vector<Vec2f> x1(data.size()), x2(data.size());
     for (int i = 0; i < data.size(); ++i)
     {
-        x1[i] = data[i].first;
-        x2[i] = data[i].second;
+        x1[i] = data[i].point_.first;
+        x2[i] = data[i].point_.second;
     }
     Mat3f F;
     fund_eight_pts(x1, x2, F);
@@ -66,14 +66,14 @@ void Fundamental_Estimator::ls_estimate(vector<pair<Vec2f, Vec2f> >& data, vecto
     }
 }
 
-int Fundamental_Estimator::check_inliers(std::pair<Vec2f, Vec2f>& data, vector<float>& params)
+int Fundamental_Estimator::check_inliers(DMatch& data, vector<float>& params)
 {
     Mat3f F;
     F << params[0], params[3], params[6],
          params[1], params[4], params[7],
          params[2], params[5], params[8];
 
-    float resi = data.second.homogeneous().dot(F * data.first.homogeneous());
+    float resi = data.point_.second.homogeneous().dot(F * data.point_.first.homogeneous());
     
     if(resi < error_thresh_)
         return 1;

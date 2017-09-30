@@ -2,5 +2,5 @@
 
 namespace open3DCV
 {
-    write_sfm(const Graph& graph);
+    void write_sfm(const Graph& graph);
 }

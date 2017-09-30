@@ -232,6 +232,17 @@ namespace open3DCV {
         }
     }
     
+    void triangulate_nonlinear(const vector<Mat34f>& poses, const vector<DMatch>& pts, vector<Vec3f>& pts3d)
+    {
+        vector<Vec2f> pts_pair(2);
+        for (int i = 0; i < pts.size(); ++i)
+        {
+            pts_pair[0] = pts[i].point_.first;
+            pts_pair[1] = pts[i].point_.second;
+            triangulate_nonlinear(poses, pts_pair, pts3d[i]);
+        }
+    }
+    
     void triangulate_nonlinear(const vector<Mat34f>& poses, const vector<Track>& tracks, vector<Structure_Point>& struct_pts)
     {
         const size_t ntracks = tracks.size();
@@ -257,9 +268,8 @@ namespace open3DCV {
                 poses[j] = graph.intrinsics_mat_[ind_cam_arr] * graph.extrinsics_mat_[ind_cam_arr];
                 pts[j] = key.coords();
             }
-            Vec3f pt3d;
+            Vec3f& pt3d = graph.structure_points_[i].coords();
             triangulate_nonlinear(poses, pts, pt3d);
-            graph.structure_points_[i].coords() = pt3d;
             
             // for debugging
             bool is_debug = false;

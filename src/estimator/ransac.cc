@@ -199,5 +199,7 @@ unsigned int Ransac<T, S>::choose(unsigned int n, unsigned int m)
     
 template class Ransac<std::pair<Vec2f, Vec2f>, float>; // for eight point fundamental matrix estimation
 template class Ransac<std::pair<Vec2f, Vec2f>, vector<float> >; // for seven point fundamental matrix estimation
+template class Ransac<DMatch, float>; // for eight point fundamental matrix estimation
+template class Ransac<DMatch, vector<float> >; // for seven point fundamental matrix estimation
 
 }

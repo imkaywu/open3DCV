@@ -25,7 +25,7 @@ namespace open3DCV
         while (!ifstr.eof())
         {
             DMatch match;
-            ifstr >> match.ikey1_ >> match.ikey2_ >> match.dist_;
+            ifstr >> match.ind_key_.first >> match.ind_key_.second >> match.dist_;
             matches.push_back(match);
         }
         ifstr.close();
@@ -70,8 +70,8 @@ namespace open3DCV
         
         for (int i = 0; i < matches.size(); ++i)
         {
-            const Vec2f& key1 = keys1[matches[i].ikey1_].coords();
-            const Vec2f& key2 = keys2[matches[i].ikey2_].coords();
+            const Vec2f& key1 = keys1[matches[i].ind_key_.first].coords();
+            const Vec2f& key2 = keys2[matches[i].ind_key_.second].coords();
             ofstr << key1(0) << " " << key1(1) << " " << key2(0) << " " << key2(1) <<std::endl;
         }
         ofstr.close();

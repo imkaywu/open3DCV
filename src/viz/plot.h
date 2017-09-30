@@ -166,8 +166,8 @@ inline void draw_matches(const Image& img0, const vector<Keypoint> keys0, const 
     for (int i = 0; i < matches.size(); ++i)
     {
         Vec2i pos0, pos1;
-        pos0 = keys0[matches[i].ikey1_].coords().cast<int>();
-        pos1 = keys1[matches[i].ikey2_].coords().cast<int>();
+        pos0 = keys0[matches[i].ind_key_.first].coords().cast<int>();
+        pos1 = keys1[matches[i].ind_key_.second].coords().cast<int>();
         pos1(0) += img0.width();
         draw_cross(img, pos0);
         draw_cross(img, pos1);
@@ -180,7 +180,7 @@ inline void draw_matches(const Image& img0, const vector<Keypoint> keys0, const 
         img.write(oname + ".jpg");
 }
     
-inline void draw_matches(const Image& img0, const Image& img1, vector<std::pair<Vec2f, Vec2f> >& matches, const string oname)
+inline void draw_matches(const Image& img0, const Image& img1, vector<DMatch>& matches, const string oname)
 {
     Image img;
     img.combine_images(img0, img1);
@@ -188,8 +188,8 @@ inline void draw_matches(const Image& img0, const Image& img1, vector<std::pair<
     for (int i = 0; i < matches.size(); ++i)
     {
         Vec2i pos0, pos1;
-        pos0 = matches[i].first.cast<int>();
-        pos1 = matches[i].second.cast<int>();
+        pos0 = matches[i].point_.first.cast<int>();
+        pos1 = matches[i].point_.second.cast<int>();
         pos1(0) += img0.width();
         draw_cross(img, pos0);
         draw_cross(img, pos1);
@@ -216,7 +216,7 @@ inline Vec3f pt2slope(const T x1, const T x2)
     return slope;
 }
     
-inline void draw_epipolar_geometry(Image img1, Image img2, const Mat3f& F, const vector<std::pair<Vec2f, Vec2f> >& matches, const string& oname)
+inline void draw_epipolar_geometry(Image img1, Image img2, const Mat3f& F, const vector<DMatch>& matches, const string& oname)
 {
     Mat3f Ftmp = F;
     Mat3f Ft = F.transpose().eval();
@@ -228,12 +228,12 @@ inline void draw_epipolar_geometry(Image img1, Image img2, const Mat3f& F, const
     
     for (int i = 0; i < std::min(30, (int)matches.size()); ++i)
     {
-        draw_cross(img1, matches[i].first.cast<int>());
+        draw_cross(img1, matches[i].point_.first.cast<int>());
 //        slope = pt2slope<Vec2f>(matches[i].first, e1.block<2, 1>(0, 0));
-        slope = Ft * matches[i].second.homogeneous();
+        slope = Ft * matches[i].point_.second.homogeneous();
         draw_line(img1, slope);
-        draw_cross(img2, matches[i].second.cast<int>());
-        slope = F * matches[i].first.homogeneous();
+        draw_cross(img2, matches[i].point_.second.cast<int>());
+        slope = F * matches[i].point_.first.homogeneous();
         draw_line(img2, slope);
     }
     Image img;

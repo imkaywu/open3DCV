@@ -29,6 +29,7 @@ namespace open3DCV {
     void triangulate_nonlinear(const vector<Mat34f>& poses, const vector<Keypoint>& keys, Vec3f& pt3d);
     void triangulate_nonlinear(const vector<Mat34f>& poses, const Track& track, Structure_Point& struct_pts);
     void triangulate_nonlinear(const vector<Mat34f>& poses, const vector<pair<Vec2f, Vec2f> >& pts, vector<Vec3f>& pts3d); // 2-view
+    void triangulate_nonlinear(const vector<Mat34f>& poses, const vector<DMatch>& pts, vector<Vec3f>& pts3d);
     void triangulate_nonlinear(const vector<Mat34f>& poses, const vector<Track>& tracks, vector<Structure_Point>& struct_pts);
     void residule(const Vec3f& pt3d, const vector<Vec2f>& pts, const vector<Mat34f>& Q, Vecf& e, Matf& J);
     
