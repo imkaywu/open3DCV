@@ -22,4 +22,19 @@ namespace open3DCV
         return Rt_inv;
     }
     
+    Mat3f RotationAroundX(float angle)
+    {
+        return Eigen::AngleAxisf(angle, Vec3f::UnitX()).toRotationMatrix();
+    }
+    
+    Mat3f RotationAroundY(float angle)
+    {
+        return Eigen::AngleAxisf(angle, Vec3f::UnitY()).toRotationMatrix();
+    }
+    
+    Mat3f RotationAroundZ(float angle)
+    {
+        return Eigen::AngleAxisf(angle, Vec3f::UnitZ()).toRotationMatrix();
+    }
+    
 }

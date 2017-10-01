@@ -1,10 +1,6 @@
 #ifndef open3DCV_numeric_h
 #define open3DCV_numeric_h
 
-//--
-// Eigen
-// http://eigen.tuxfamily.org/dox-devel/QuickRefPage.html
-//--
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
 #include <Eigen/Geometry>
@@ -111,99 +107,15 @@ typedef Eigen::Matrix<double, 9, Eigen::Dynamic> Mat9X;
 
 /// Quaternion type
 typedef Eigen::Quaternion<double> Quaternion;
+typedef Eigen::Quaternion<float> Quaternionf;
 
-/*
 using Eigen::Map;
 
 /// Trait used for double type
 typedef Eigen::NumTraits<double> EigenDoubleTraits;
 
-/// 3d vector using double internal format
-typedef Eigen::Vector3d Vec3;
-
-/// 2d vector using int internal format
-typedef Eigen::Vector2i Vec2i;
-
-/// 2d vector using float internal format
-typedef Eigen::Vector2f Vec2f;
-
-/// 3d vector using float internal format
-typedef Eigen::Vector3f Vec3f;
-
-/// 9d vector using double internal format
-typedef Eigen::Matrix<double, 9, 1> Vec9;
-
-/// Quaternion type
-typedef Eigen::Quaternion<double> Quaternion;
-
-/// 3x3 matrix using double internal format
-typedef Eigen::Matrix<double, 3, 3> Mat3;
-
-#if defined(ENV32BIT)
-
-  /// 3x4 matrix using double internal format
-  typedef Eigen::Matrix<double, 3, 4, Eigen::DontAlign> Mat34;
-
-  /// 2d vector using double internal format
-  typedef Eigen::Matrix<double, 2, 1, Eigen::DontAlign> Vec2;
-
-  /// 4d vector using double internal format
-  typedef Eigen::Matrix<double, 4, 1, Eigen::DontAlign> Vec4;
-
-  /// 6d vector using double internal format
-  typedef Eigen::Matrix<double, 6, 1, Eigen::DontAlign> Vec6;
-#else // 64 bits compiler
-
-  /// 3x4 matrix using double internal format
-  typedef Eigen::Matrix<double, 3, 4> Mat34;
-
-  /// 2d vector using double internal format
-  typedef Eigen::Vector2d Vec2;
-
-  /// 4d vector using double internal format
-  typedef Eigen::Vector4d Vec4;
-
-  /// 6d vector using double internal format
-  typedef Eigen::Matrix<double, 6, 1> Vec6;
-#endif
-
-
-/// 4x4 matrix using double internal format
-typedef Eigen::Matrix<double, 4, 4> Mat4;
-
-/// generic matrix using unsigned int internal format
-typedef Eigen::Matrix<unsigned int, Eigen::Dynamic, Eigen::Dynamic> Matu;
-
 /// 3x3 matrix using double internal format with RowMajor storage
 typedef Eigen::Matrix<double, 3, 3, Eigen::RowMajor> RMat3;
-
-//-- General purpose Matrix and Vector
-/// Unconstrained matrix using double internal format
-typedef Eigen::MatrixXd Mat;
-
-/// Unconstrained vector using double internal format
-typedef Eigen::VectorXd Vec;
-
-/// Unconstrained vector using unsigned int internal format
-typedef Eigen::Matrix<unsigned int, Eigen::Dynamic, 1> Vecu;
-
-/// Unconstrained matrix using float internal format
-typedef Eigen::MatrixXf Matf;
-
-/// Unconstrained vector using float internal format
-typedef Eigen::VectorXf Vecf;
-
-/// 2xN matrix using double internal format
-typedef Eigen::Matrix<double, 2, Eigen::Dynamic> Mat2X;
-
-/// 3xN matrix using double internal format
-typedef Eigen::Matrix<double, 3, Eigen::Dynamic> Mat3X;
-
-/// 4xN matrix using double internal format
-typedef Eigen::Matrix<double, 4, Eigen::Dynamic> Mat4X;
-
-/// 9xN matrix using double internal format
-typedef Eigen::Matrix<double, Eigen::Dynamic, 9> MatX9;
 
 //-- Sparse Matrix (Column major, and row major)
 /// Sparse unconstrained matrix using double internal format
@@ -211,24 +123,13 @@ typedef Eigen::SparseMatrix<double> sMat;
 
 /// Sparse unconstrained matrix using double internal format and Row Major storage
 typedef Eigen::SparseMatrix<double, Eigen::RowMajor> sRMat;
-*/
+
 
 //--------------
 //-- Function --
 //--------------
-template<typename T>
-inline T sign_func(T x)
-{
-    if (x > 0)
-        return +1.0;
-    else if (x == 0)
-        return 0.0;
-    else
-        return -1.0;
-}
-    
 template<typename TMat, typename TVec>
-TMat cross_mat(const TVec& x)
+TMat cross_product_matrix(const TVec& x)
 {
     TMat X;
     X << 0,     -x(2),  x(1),
@@ -269,7 +170,7 @@ inline int rq(T M, T& R, T& Q)
 }
     
 template <typename TMat, typename TVec>
-float nullspace( TMat *A, TVec *x )
+float nullspace(TMat *A, TVec *x)
 {
     if ( A->rows() >= A->cols() )
     {
@@ -285,6 +186,60 @@ float nullspace( TMat *A, TVec *x )
     return nullspace( &A_extended, x );
 }
     
+template <typename T>
+T nullspace(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>* A,
+            Eigen::Matrix<T, Eigen::Dynamic, 1>* x)
+{
+    typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> TMat;
+    typedef Eigen::Matrix<T, Eigen::Dynamic, 1> TVec;
+    if (A->rows() >= A->cols())
+    {
+        Eigen::JacobiSVD<TMat> svd(*A, Eigen::ComputeFullV);
+        (*x) = svd.matrixV().col(A->cols() - 1);
+        return (T)svd.singularValues()(A->cols() - 1);
+    }
+    // Extend A with rows of zeros to make it square. It's a hack, but is
+    // necessary until Eigen supports SVD with more columns than rows.
+    TMat A_extended(A->cols(), A->cols());
+    A_extended.block<A->cols() - A->rows(), A->cols()>(A->rows(), 0).setZero();
+    A_extended.block<A->rows(), A->cols()>(0, 0) = (*A);
+    return nullspace(&A_extended, x);
+}
+
+
+template <typename T>
+inline double Nullspace2(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> *A,
+                         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> *x1,
+                         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> *x2 )
+{
+    typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> TMat;
+    typedef Eigen::Matrix<T, Eigen::Dynamic, 1> TVec;
+    if ( A->rows() >= A->cols() )
+    {
+        Eigen::JacobiSVD<TMat> svd(*A, Eigen::ComputeFullV);
+        TMat V = svd.matrixV();
+        *x1 = V.col(A->cols() - 1);
+        *x2 = V.col(A->cols() - 2);
+        return svd.singularValues()(A->cols() - 1);
+    }
+    // Extend A with rows of zeros to make it square. It's a hack, but is
+    // necessary until Eigen supports SVD with more columns than rows.
+    TMat A_extended(A->cols(), A->cols());
+    A_extended.block<A->cols() - A->rows(), A->cols()>(A->rows(), 0).setZero();
+    A_extended.block<A->rows(), A->cols()>(0, 0) = (*A);
+    return Nullspace2(&A_extended, x1, x2);
+}
+
+    
+template <typename T>
+void svd(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>* A,
+         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>* U,
+         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>* S,
+         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>* V)
+{
+    
+}
+
 template <typename Mat0, typename Mat1, typename Mat2>
 void svd(Mat0 *A, Mat1 *U, Mat2 *S, Mat2 *V)
 {
@@ -313,14 +268,8 @@ void svd(Mat0 *A, Mat1 *U, Mat2 *S, Mat2 *V)
     }
 }
 
-/**
-* @brief Compute square of a number
-* @tparam T Type of the number to square
-* @param x Input number
-* @return square of x
-*/
 template<typename T>
-inline T Square( T x )
+inline T square( T x )
 {
   return x * x;
 }
@@ -340,69 +289,6 @@ inline T clamp( const T & val, const T& min, const T & max )
 {
   return std::max( min, std::min( val, max ) );
   //(val < min) ? val : ((val>max) ? val : max);
-}
-
-/**
-* @brief Given a vector, computes it's cross product matrix
-*
-* Cross product matrix is a helper matrix used to express cross product as a multiplication matrix \n
-* Given two vectors \f$a=\begin{pmatrix}a_x\\a_y\\a_z\end{pmatrix}\f$ and \f$b=\begin{pmatrix}b_x\\b_y\\b_z\end{pmatrix}\f$, cross product \f$a\times b\f$ is equal to :\n
-* \f$a\times b = \begin{pmatrix}a\end{pmatrix}_{\times} b = \begin{pmatrix}0 & -a_z & a_y \\ a_z & 0 & -a_x \\ -a_y & a_x & 0 \end{pmatrix} b \f$
-*
-* where \f$\begin{pmatrix}a\end{pmatrix}_{\times}\f$ is the cross product matrix of a.
-*
-* @param x Input vector
-* @return Cross product matrix of a input vector
-*/
-Mat3f CrossProductMatrix( const Vec3f &x );
-//Mat3 CrossProductMatrix( const Vec3 &x );
-
-
-/**
-* @brief Compute rotation matrix around X-axis
-* @param angle Angle of rotation in radian
-* @return Rotation matrix of given magnitude
-*/
-Mat3 RotationAroundX( double angle );
-
-
-/**
-* @brief Compute rotation matrix around Y-axis
-* @param angle Angle of rotation in radian
-* @return Rotation matrix of given magnitude
-*/
-Mat3 RotationAroundY( double angle );
-
-
-/**
-* @brief Compute rotation matrix around Z-axis
-* @param angle Angle sof rotation in radian
-* @return Rotation matrix of given magnitude
-*/
-Mat3 RotationAroundZ( double angle );
-
-
-/**
-* @brief Convert an angle from degree to radian
-* @param degree Angle in degree
-* @return Same angle in radian
-* @note Assuming input angle is in range [0;360]
-*/
-inline double D2R( double degree )
-{
-  return degree * M_PI / 180.0;
-}
-
-
-/**
-* @brief Convert an angle from radian to degree
-* @param radian Angle in radian
-* @return Same angle in degree
-* @note Assuming input angle in range [0;2Pi]
-*/
-inline double R2D( double radian )
-{
-  return radian / M_PI * 180.0;
 }
 
 /**

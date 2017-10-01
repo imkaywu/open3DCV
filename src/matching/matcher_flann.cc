@@ -56,6 +56,7 @@ namespace open3DCV
     
     int Matcher_Flann::match_bidirect(const vector<Vecf>& desc1, const vector<Vecf>& desc2, const kd_tree_t& desc_index_1, const kd_tree_t& desc_index_2, const float ratio, std::vector<DMatch>& matches)
     {
+        matches.clear();
         // do knn searches
         int nresults = matcher_param_.nresults;
         vector<size_t> ret_indexes(nresults);
@@ -84,6 +85,7 @@ namespace open3DCV
     
     int Matcher_Flann::match(const vector<Vecf>& desc1, const vector<Vecf>& desc2, vector<DMatch>& matches, float (*dist_metric)(const Vecf& desc1, const Vecf& desc2))
     {
+        /*
         // use the one with larger keypoints to construct kd-tree
         size_t nkeys1 = desc1.size(), nkeys2 = desc2.size();
         const vector<Vecf>& desc_source = nkeys1 < nkeys2 ? desc1 : desc2;
@@ -94,7 +96,7 @@ namespace open3DCV
         typedef KDTreeVectorOfVectorsAdaptor<vector<Vecf>, float>  kd_tree_t;
         
         int leaf_max_size = matcher_param_.leaf_max_size;
-        kd_tree_t desc_index(matcher_param_.ndims, desc_target, leaf_max_size /* max leaf */);
+        kd_tree_t desc_index(matcher_param_.ndims, desc_target, leaf_max_size);
         desc_index.index->buildIndex();
         
         // do knn searches
@@ -122,7 +124,7 @@ namespace open3DCV
                 }
             }
         }
-        
+        */
         return 0;
     }
 }

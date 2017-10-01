@@ -159,7 +159,7 @@ void Fundamental_Estimator::fund_seven_pts (const std::vector<Vec2f>& x1, const 
         Mat3f Ftmp = (float)roots(i) * Fmat[0] + (float)(1 - roots(i)) * Fmat[1];
         JacobiSVD<Mat3f> fmatrix_svd(Ftmp.transpose(), Eigen::ComputeFullV);
         Vec3f e1 = fmatrix_svd.matrixV().col(2);
-        Mat3Xf l1_ex = CrossProductMatrix(e1) * matx1.colwise().homogeneous(); // lines connecting of x1 and e1
+        Mat3Xf l1_ex = cross_product_matrix<Mat3f, Vec3f>(e1) * matx1.colwise().homogeneous(); // lines connecting of x1 and e1
         Mat3Xf l1_Fx = Ftmp * matx2.colwise().homogeneous(); // lines determined by F and x2
         Vecf s = (l1_Fx.array() * l1_ex.array()).colwise().sum();
         if ((s.array() > 0).all() || (s.array() < 0).all())

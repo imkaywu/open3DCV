@@ -5,34 +5,6 @@
 
 namespace open3DCV {
 
-Mat3f CrossProductMatrix(const Vec3f &x) {
-    Mat3f X;
-    X << 0, -x(2),  x(1),
-         x(2),     0, -x(0),
-        -x(1),  x(0),     0;
-    return X;
-}
-
-//Mat3 CrossProductMatrix(const Vec3 &x) {
-//  Mat3 X;
-//  X << 0, -x(2),  x(1),
-//    x(2),     0, -x(0),
-//   -x(1),  x(0),     0;
-//  return X;
-//}
-
-Mat3 RotationAroundX(double angle) {
-  return Eigen::AngleAxisd(angle, Vec3::UnitX()).toRotationMatrix();
-}
-
-Mat3 RotationAroundY(double angle) {
-  return Eigen::AngleAxisd(angle, Vec3::UnitY()).toRotationMatrix();
-}
-
-Mat3 RotationAroundZ(double angle) {
-  return Eigen::AngleAxisd(angle, Vec3::UnitZ()).toRotationMatrix();
-}
-
 double getRotationMagnitude(const Mat3 & R2) {
   const Mat3 R1 = Mat3::Identity();
   double cos_theta = (R1.array() * R2.array()).sum() / 3.0;
@@ -110,7 +82,7 @@ void MeanAndVarianceAlongRows(const Mat &A,
 
     mean /= m;
     for (Mat::Index i = 0; i < n; ++i) {
-      variance(i) = variance(i) / m - Square(mean(i));
+      variance(i) = variance(i) / m - square(mean(i));
     }
 }
 

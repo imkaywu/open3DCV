@@ -194,4 +194,9 @@ namespace open3DCV
 
         // find new features from non-overlapping cameras, this part is not needed for now
     }
+    
+    bool Graph::operator<(const Graph& rhs) const
+    {
+        return (cams_[0] < rhs.cams_[0]) && (cams_[1] < rhs.cams_[1]);
+    }
 }

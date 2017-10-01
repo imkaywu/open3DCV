@@ -25,6 +25,7 @@ namespace open3DCV
         void rm_struct_pt(int index);
         static void merge_graph(Graph& graph1, Graph& graph2);
         static void merge_tracks(Track& track1, const Track& track2, std::vector<std::pair<int, int> >& ind_key);
+        bool operator<(const Graph& rhs) const;
         
         int ncams_;
         std::vector<int> cams_;
