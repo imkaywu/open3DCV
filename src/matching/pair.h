@@ -18,9 +18,10 @@ namespace open3DCV
         ~Pair();
         
         void init(const int ind_cam1, const int ind_cam2);
-        void update_matches(const std::vector<DMatch>& matches, const int* vote_inlier);
+        void update_matches(const int* vote_inlier);
         void update_intrinsics(const float f, const int w, const int h);
         bool operator<(const Pair& rhs) const;
+        float baseline_angle() const;
         
         std::vector<int> cams_;
         std::vector<DMatch> matches_;

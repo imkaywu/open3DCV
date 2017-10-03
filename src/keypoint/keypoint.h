@@ -42,6 +42,8 @@ namespace open3DCV {
         double& orientation();
         const int has_orientation() const;
         
+        bool operator<(const Keypoint& rhs) const;
+        
         static int is_identical(const Keypoint& key1, const Keypoint& key2);
 
     private:

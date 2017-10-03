@@ -46,16 +46,23 @@ namespace open3DCV
         return static_cast<int>(keys_.size());
     }
     
+    std::vector<Keypoint>::iterator Track::key_begin()
+    {
+        return keys_.begin();
+    }
+    
+    std::vector<Keypoint>::iterator Track::key_end()
+    {
+        return keys_.end();
+    }
+    
     int Track::has_overlapping_keypoints(const Track& track1, const Track& track2)
     {
         for (int i = 0; i < track1.size(); ++i)
-        {
-            for (int j = 0; j < track2.size(); ++i)
-            {
+            for (int j = 0; j < track2.size(); ++j)
                 if (Keypoint::is_identical(track1[i], track2[j]))
                     return 1;
-            }
-        }
+
         return 0;
     }
     

@@ -206,7 +206,6 @@ T nullspace(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>* A,
     return nullspace(&A_extended, x);
 }
 
-
 template <typename T>
 inline double Nullspace2(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> *A,
                          Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> *x1,
@@ -229,7 +228,6 @@ inline double Nullspace2(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> *A,
     A_extended.block<A->rows(), A->cols()>(0, 0) = (*A);
     return Nullspace2(&A_extended, x1, x2);
 }
-
     
 template <typename T>
 void svd(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>* A,

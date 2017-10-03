@@ -9,7 +9,32 @@ using std::string;
 
 namespace open3DCV
 {
-    int read_keypoints(vector<Keypoint> &keypoints, const string fname)
+    int read_keypoints(const string fname, vector<Keypoint> &keypoints)
+    {
+        std::ifstream ifstr;
+        ifstr.open(fname, std::ifstream::in);
+        if (!ifstr.is_open())
+        {
+            std::cerr << "Cannot open the file." << std::endl;
+            return 1;
+        }
+        
+        string line;
+        while (std::getline(ifstr, line))
+        {
+            float x, y, s, o;
+            std::istringstream iss(line);
+            if (!(iss >> x >> y >> s >> o)) { break; } // error
+//            ifstr >> x >> y >> s >> o;
+            Keypoint key(Vec2f(x, y), s, o);
+            keypoints.push_back(key);
+        }
+        ifstr.close();
+        
+        return 0;
+    }
+    
+    int read_keypoints(const string fname, vector<Vec2f>& keys)
     {
         std::ifstream ifstr;
         ifstr.open(fname, std::ifstream::in);
@@ -21,16 +46,17 @@ namespace open3DCV
         
         while (!ifstr.eof())
         {
-            float x, y, s, o;
-            ifstr >> x >> y >> s >> o;
-            Keypoint key(Vec2f(x, y), s, o);
-            keypoints.push_back(key);
+            float s, o;
+            Vec2f key;
+            ifstr >> key(0) >> key(1) >> s >> o;
+            keys.push_back(key);
         }
         ifstr.close();
         
         return 0;
     }
-    int write_keypoints(const vector<Keypoint> &keypoints, const string fname)
+    
+    int write_keypoints(const string fname, const vector<Keypoint> &keypoints)
     {
         std::ofstream ofstr;
         ofstr.open(fname, std::ofstream::out);
@@ -50,5 +76,6 @@ namespace open3DCV
         
         return 0;
     }
+
 }
 

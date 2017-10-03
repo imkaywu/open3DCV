@@ -8,8 +8,10 @@
 
 namespace open3DCV
 {
+    int read_matches(const std::string fname, std::vector<DMatch>& matches);
     int read_matches(const std::string fname, const std::vector<Keypoint>& keys1, const std::vector<Keypoint>& keys2, std::vector<DMatch>& matches);
     int read_matches(const std::string fname, std::vector<std::pair<Vec2f, Vec2f> >& matches);
+    int write_matches(const std::string fname, const std::vector<DMatch>& matches);
     int write_matches(const std::string fname, const std::vector<Keypoint>& keys1, const std::vector<Keypoint>& keys2, const std::vector<DMatch>& matches);
     int write_matches(const std::string fname, const std::vector<std::pair<Vec2f, Vec2f> >& matches);
 }

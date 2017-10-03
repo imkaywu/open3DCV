@@ -93,6 +93,11 @@ namespace open3DCV
         return orientation_ != open3DCV_KEYPOINT_VAR;
     }
     
+    bool Keypoint::operator<(const Keypoint& rhs) const
+    {
+        return index() < rhs.index();
+    }
+    
     int Keypoint::is_identical(const Keypoint& key1, const Keypoint& key2)
     {
         float dist = 1e-10;

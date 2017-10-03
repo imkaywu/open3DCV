@@ -1,4 +1,5 @@
 #include "matching/pair.h"
+#include "transform/rodrigues.h"
 
 using std::vector;
 using std::pair;
@@ -29,14 +30,13 @@ namespace open3DCV
         extrinsics_mat_.clear();
     }
     
-    void Pair::update_matches(const std::vector<DMatch>& matches, const int* vote_inlier)
+    void Pair::update_matches(const int* vote_inlier)
     {
-        matches_.clear();
-        for (int i = 0; i < matches.size(); ++i)
+        for (int i = static_cast<int>(matches_.size() - 1); i >= 0; --i)
         {
-            if (vote_inlier[i])
+            if (!vote_inlier[i])
             {
-                matches_.push_back(matches[i]);
+                matches_.erase(matches_.begin() + i);
             }
         }
     }
@@ -70,5 +70,13 @@ namespace open3DCV
     bool Pair::operator<(const Pair& rhs) const
     {
         return matches_.size() > rhs.matches_.size();
+    }
+    
+    float Pair::baseline_angle() const
+    {
+        Mat3f rotation = extrinsics_mat_[1].block<3, 3>(0, 0);
+        Vec3f om;
+        irodrigues(om, nullptr, rotation);
+        return om.norm();
     }
 }

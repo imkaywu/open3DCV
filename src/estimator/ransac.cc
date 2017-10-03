@@ -137,6 +137,16 @@ float Ransac<T, S>::estimate(Param_Estimator<T, S>* param_estimator,
         }
     }
     
+    // release the memory
+    typename std::set<int*, Subset_Ind_Cmp>::iterator it = subset_ind.begin();
+    typename std::set<int*, Subset_Ind_Cmp>::iterator subset_ind_end = subset_ind.end();
+    while (it != subset_ind_end)
+    {
+        delete [] (*it);
+        ++it;
+    }
+    subset_ind.clear();
+    
     // compute the least squares estimate using the largest subset
     if (nvotes_best > 0)
     {
@@ -148,16 +158,6 @@ float Ransac<T, S>::estimate(Param_Estimator<T, S>* param_estimator,
         }
         param_estimator->ls_estimate(ls_est_data, params);
     }
-    
-    // release the memory
-    typename std::set<int*, Subset_Ind_Cmp>::iterator it = subset_ind.begin();
-    typename std::set<int*, Subset_Ind_Cmp>::iterator subset_ind_end = subset_ind.end();
-    while (it != subset_ind_end)
-    {
-        delete [] (*it);
-        ++it;
-    }
-    subset_ind.clear();
     
     delete [] vote_best;
     delete [] vote_cur;
@@ -196,7 +196,7 @@ unsigned int Ransac<T, S>::choose(unsigned int n, unsigned int m)
     else
         return static_cast<unsigned int>(result);
 }
-    
+
 template class Ransac<std::pair<Vec2f, Vec2f>, float>; // for eight point fundamental matrix estimation
 template class Ransac<std::pair<Vec2f, Vec2f>, vector<float> >; // for seven point fundamental matrix estimation
 template class Ransac<DMatch, float>; // for eight point fundamental matrix estimation

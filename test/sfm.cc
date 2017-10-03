@@ -11,6 +11,7 @@
 #include "sfm/bundle_adjust.h"
 #include "sfm/graph.h"
 #include "viz/plot.h"
+#include "io/keypoint_io.h"
 #include "io/match_io.h"
 #include "io/sfm_io.h"
 
@@ -19,14 +20,16 @@ using namespace open3DCV;
 
 int main(const int argc, const char** argv)
 {
-    string idir = "/Users/BlacKay/Documents/Projects/Images/test/templeRing";
-    string odir = "temple/";
+    string odir = "templeRing/";
+    string idir = "/Users/BlacKay/Documents/Projects/Images/test/sfm/"+odir;
     bool is_vis = true;
+    bool read_from_file = true;
+    const float bs_angle_thre[2] = {3.0 / 180.0 * M_PI, 70.0 / 180.0f * M_PI};
     
     // -------------------------------------------------
     // read images
     // -------------------------------------------------
-    const int nimages = 8;
+    const int nimages = 10;
     char iname[100];
     vector<Image> images(nimages);
     for (int i = 0; i < nimages; ++i)
@@ -43,16 +46,29 @@ int main(const int argc, const char** argv)
     Sift sift(sift_param);
     vector<vector<Keypoint> > keys(nimages, vector<Keypoint>());
     vector<vector<Vecf> > descs(nimages, vector<Vecf>());
-    for (int i = 0; i < nimages; ++i)
+    if (!read_from_file)
     {
-        sift.detect_keypoints(images[i], keys[i], 0);
-        sift.extract_descriptors(images[i], keys[i], descs[i]);
-        sift.clear();
-        if ((false))
+        for (int i = 0; i < nimages; ++i)
         {
-            draw_cross(images[i], keys[i], odir+"feature"+to_string(i+1));
+            sift.detect_keypoints(images[i], keys[i], 0);
+            sift.extract_descriptors(images[i], keys[i], descs[i]);
+            sift.clear();
+            string fname = odir+"feature"+to_string(i+1)+".txt";
+            write_keypoints(fname, keys[i]);
+            if ((false))
+            {
+                draw_cross(images[i], keys[i], odir+"feature"+to_string(i+1));
+            }
+            cout << "Image " << i + 1 << ": " << "features number: " << keys[i].size() << endl;
         }
-        cout << "Image " << i + 1 << ": " << "features number: " << keys[i].size() << endl;
+    }
+    else
+    {
+        for (int i = 0; i < nimages; ++i)
+        {
+            string fname = odir+"feature"+to_string(i+1)+".txt";
+            read_keypoints(fname, keys[i]);
+        }
     }
     
     // -------------------------------------------------
@@ -62,19 +78,39 @@ int main(const int argc, const char** argv)
     Matcher_Param matcher_param(0.6*0.6, 50);
     Matcher_Flann matcher(matcher_param);
     vector<vector<vector<DMatch> > > matches_pairwise(nimages-1, vector<vector<DMatch> >());
-    for (int i = 0; i < nimages-1; ++i)
+    if (!read_from_file)
     {
-        matches_pairwise[i].resize(nimages-(i+1));
-        for (int j = i+1; j < nimages; ++j)
+        for (int i = 0; i < nimages-1; ++i)
         {
-            vector<DMatch>& matches = matches_pairwise[i][j-(i+1)];
-            matcher.match(descs[i], descs[j], matches);
-            pairs.push_back(Pair(i, j, matches));
-            if ((false))
+            matches_pairwise[i].resize(nimages-(i+1));
+            for (int j = i+1; j < nimages; ++j)
             {
-                draw_matches(images[i], keys[i], images[j], keys[j], matches, odir+"matching"+to_string(i+1)+"_"+to_string(j+1));
+                vector<DMatch>& matches = matches_pairwise[i][j-(i+1)];
+                matcher.match(descs[i], descs[j], matches);
+                matcher.matching_keys(keys[i], keys[j], matches);
+                pairs.push_back(Pair(i, j, matches));
+                string fname = odir+"matching"+to_string(i+1)+"_"+to_string(j+1)+".txt";
+                write_matches(fname, matches);
+                if ((false))
+                {
+                    draw_matches(images[i], keys[i], images[j], keys[j], matches, odir+"matching"+to_string(i+1)+"_"+to_string(j+1));
+                }
+                cout << "Image (" << i+1 << ", " << j+1 << "): matches number: " << matches.size() << endl;
             }
-            cout << "Image (" << i+1 << ", " << j+1 << "): matches number: " << matches.size() << endl;
+        }
+    }
+    else
+    {
+        for (int i = 0; i < nimages - 1; ++i)
+        {
+            matches_pairwise[i].resize(nimages-(i+1));
+            for (int j = i+1; j < nimages; ++j)
+            {
+                vector<DMatch>& matches = matches_pairwise[i][j-(i+1)];
+                string fname = odir+"matching"+to_string(i+1)+"_"+to_string(j+1)+".txt";
+                read_matches(fname, matches);
+                pairs.push_back(Pair(i, j, matches));
+            }
         }
     }
     sort(pairs.begin(), pairs.end()); // sort pairs based on number of matches
@@ -82,7 +118,6 @@ int main(const int argc, const char** argv)
     // -------------------------------------------------
     // 2-view SfM
     // -------------------------------------------------
-    vector<DMatch> data; // variable to store the coordinates of matching features
     vector<Graph> graphs;
     const float reproj_error_thre = 1.0;
     const float ratio_inlier_thre = 0.6;
@@ -94,31 +129,18 @@ int main(const int argc, const char** argv)
         const int& ind1 = pair.cams_[0];
         const int& ind2 = pair.cams_[1];
         cout << "*******************************" << endl;
-        cout << " 2-View SfM of image " << ind1 << " and " << ind2 << endl;
+        cout << " 2-View SfM of image " << ind1+1 << " and " << ind2+1 << endl;
         cout << "*******************************" << endl;
-        
-        for (int j = 0; j < nmatches; ++j)
-        {
-            Vec2f x1 = keys[ind1][pair.matches_[j].ind_key_.first].coords();
-            Vec2f x2 = keys[ind2][pair.matches_[j].ind_key_.second].coords();
-            DMatch pair_data;
-            pair_data.point_.first = x1;
-            pair_data.point_.second = x2;
-            data.push_back(pair_data);
-        }
-        int *vote_inlier = new int[nmatches];
-        std::fill(vote_inlier, vote_inlier + nmatches, 1);
-        pair.update_matches(data, vote_inlier);
         
         // ------ estimate Fundamental matrix ------
         vector<float> params(9);
+        int *vote_inlier = new int[nmatches];
         Param_Estimator<DMatch, float>* fund_esti = new open3DCV::Fundamental_Estimator(10e-8);
         float ratio_inlier = Ransac<DMatch, float>::estimate(fund_esti, pair.matches_, params, 0.99, vote_inlier);
         std::cout << "ratio of matching inliers: " << ratio_inlier << std::endl;
         if (ratio_inlier < ratio_inlier_thre)
         {
             delete [] vote_inlier;
-            data.clear();
             continue;
         }
         pair.F_ << params[0], params[3], params[6],
@@ -126,18 +148,8 @@ int main(const int argc, const char** argv)
                    params[2], params[5], params[8];
         
         // remove outliers
-        pair.update_matches(data, vote_inlier);
+        pair.update_matches(vote_inlier);
         std::cout << "number of matches: " << pair.matches_.size() << std::endl;
-        // visualize matching inliers
-        if (is_vis)
-        {
-            draw_matches(images[ind1], images[ind2], pair.matches_, odir+"matching_inlier"+to_string(ind1+1)+"_"+to_string(ind2+1));
-        }
-        // visualize epipolar geometry
-        if (is_vis)
-        {
-            draw_epipolar_geometry(images[ind1], images[ind2], pair.F_, pair.matches_, odir+"epipolar"+to_string(ind1+1)+"_"+to_string(ind2+1));
-        }
         
         // ------ estimate relative pose ------
 //        const float f = 719.5459;
@@ -147,6 +159,11 @@ int main(const int argc, const char** argv)
         pair.update_intrinsics(f, w, h);
         pair.E_ = pair.intrinsics_mat_[1].transpose() * pair.F_ * pair.intrinsics_mat_[0];
         Rt_from_E(pair);
+        
+        // ------ filter pair using baseline angle ------
+        float angle = pair.baseline_angle();
+        if (angle < bs_angle_thre[0] || angle > bs_angle_thre[1])
+            continue;
         
         // ------ init graph from pair ------
         Graph graph(pair);
@@ -160,13 +177,17 @@ int main(const int argc, const char** argv)
         
         // ------ bundle adjustment ------
         cout << "------ start bundle adjustment ------" << endl;
-        Open3DCVBundleAdjustment(graph, BUNDLE_PRINCIPAL_POINT);
+        Open3DCVBundleAdjustment(graph, BUNDLE_INTRINSICS);
         cout << "------ end bundle adjustment ------" << endl;
         error = reprojection_error(graph);
         std::cout << "reprojection error (after bundle adjustment): " << error << std::endl;
         
+        // ------ filter pair using baseline angle ------
+        angle = graph.baseline_angle();
+        if (angle < bs_angle_thre[0] || angle > bs_angle_thre[1])
+            continue;
+        
         delete [] vote_inlier;
-        data.clear();
         
         if (error > reproj_error_thre)
             continue;
@@ -178,20 +199,53 @@ int main(const int argc, const char** argv)
         }
         
         graphs.push_back(graph);
+        
+        // visualize matching inliers
+        if ((false))
+        {
+            draw_matches(images[ind1], images[ind2], pair.matches_, odir+"matching_inlier"+to_string(ind1+1)+"_"+to_string(ind2+1));
+        }
+        // visualize epipolar geometry
+        if (is_vis)
+        {
+            draw_epipolar_geometry(images[ind1], images[ind2], pair.F_, pair.matches_, odir+"epipolar"+to_string(ind1+1)+"_"+to_string(ind2+1));
+        }
     }
     sort(graphs.begin(), graphs.end());
     
     // -------------------------------------------------
+    // debug
+    // -------------------------------------------------
+    if ((false))
+    {
+        for (int i = 0; i < graphs.size(); ++i)
+        {
+            const Graph& graph = graphs[i];
+            const Mat3f rot_mat = graph.extrinsics_mat_[1].block<3, 3>(0, 0);
+            Vec3f om;
+            irodrigues(om, nullptr, rot_mat);
+            cout << "rotation axis:  " << endl << om / om.norm() << endl;
+            cout << "rotation angle: " << endl << om.norm() << endl;
+        }
+    }
+    
+    // -------------------------------------------------
     // N-view SfM
     // -------------------------------------------------
+    // find a more elegant way to deal with the first graph
+    vector<int> merged_graph(graphs.size());
+    fill(merged_graph.begin(), merged_graph.end(), 0);
+    merged_graph[0] = 1;
     Graph global_graph(graphs[0]);
-    for (int i = 1; i < graphs.size(); ++i)
+    int icam = 0;
+    while ((icam = Graph::find_next_graph(graphs, global_graph, merged_graph)) > 0)
     {
         cout << "*******************************" << endl;
-        cout << " N-View SfM: merging graph 0-" << i << endl;
+        cout << " N-View SfM: merging graph " << icam+1 << endl;
         cout << "*******************************" << endl;
+        
         // ------ merge graphs ------
-        Graph::merge_graph(global_graph, graphs[i]);
+        Graph::merge_graph(global_graph, graphs[icam]);
         
         // ------ N-view triangulation ------
         triangulate_nonlinear(global_graph);
@@ -200,7 +254,7 @@ int main(const int argc, const char** argv)
         
         // ------ N-view bundle adjustment ------
         cout << "------ start bundle adjustment ------" << endl;
-        Open3DCVBundleAdjustment(global_graph, BUNDLE_PRINCIPAL_POINT);
+        Open3DCVBundleAdjustment(global_graph, BUNDLE_INTRINSICS);
         cout << "------ end bundle adjustment ------" << endl;
         error = reprojection_error(global_graph);
         std::cout << "reprojection error (after bundle adjustment): " << error << std::endl;

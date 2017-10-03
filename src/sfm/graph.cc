@@ -1,6 +1,8 @@
 #include "transform/transform.h"
+#include "transform/rodrigues.h"
 #include "sfm/graph.h"
 #include "utils/sort_index.h"
+#include "triangulation/triangulation.h"
 
 using std::vector;
 using std::pair;
@@ -9,7 +11,14 @@ namespace open3DCV
 {
     Graph::Graph()
     {
-        // no op
+        ncams_ = 0;
+        cams_ = vector<int>();
+        F_.setZero();
+        E_.setZero();
+        intrinsics_mat_ = vector<Mat3f>();
+        extrinsics_mat_ = vector<Mat34f>();
+        tracks_ = vector<Track>();
+        structure_points_ = vector<Structure_Point>();
     }
     
     Graph::Graph(const Pair& pair)
@@ -19,19 +28,13 @@ namespace open3DCV
     
     Graph::Graph(const Graph& graph)
     {
-        ncams_ = graph.ncams_;
-        cams_ = graph.cams_;
-        F_ = graph.F_;
-        E_ = graph.E_;
-        intrinsics_mat_ = graph.intrinsics_mat_;
-        extrinsics_mat_ = graph.extrinsics_mat_;
-        tracks_.resize(graph.tracks_.size(), Track());
-        structure_points_.resize(graph.tracks_.size(), Structure_Point());
-        for (int i = 0; i < graph.tracks_.size(); ++i)
-        {
-            tracks_[i] = graph.tracks_[i];
-            structure_points_[i] = graph.structure_points_[i];
-        }
+        init(graph);
+    }
+    
+    Graph& Graph::operator=(const Graph& graph)
+    {
+        init(graph);
+        return *this;
     }
     
     Graph::~Graph()
@@ -62,6 +65,23 @@ namespace open3DCV
         }
         
         structure_points_.resize(nmatches);
+    }
+    
+    void Graph::init(const Graph& graph)
+    {
+        ncams_ = graph.ncams_;
+        cams_ = graph.cams_;
+        F_ = graph.F_;
+        E_ = graph.E_;
+        intrinsics_mat_ = graph.intrinsics_mat_;
+        extrinsics_mat_ = graph.extrinsics_mat_;
+        tracks_.resize(graph.tracks_.size(), Track());
+        structure_points_.resize(graph.tracks_.size(), Structure_Point());
+        for (int i = 0; i < graph.tracks_.size(); ++i)
+        {
+            tracks_[i] = graph.tracks_[i];
+            structure_points_[i] = graph.structure_points_[i];
+        }
     }
     
     int Graph::index(int icam) const
@@ -122,12 +142,12 @@ namespace open3DCV
         vector<int>::iterator iter;
         
         // find overlapping cameras
-        vector<int> cams_common(std::max(graph1.ncams_, graph2.ncams_));
+        vector<int> cams_common(std::min(graph1.ncams_, graph2.ncams_));
         iter = std::set_intersection(graph1.cams_.begin(), graph1.cams_.end(), graph2.cams_.begin(), graph2.cams_.end(), cams_common.begin());
         cams_common.resize(iter - cams_common.begin());
         
         // find distinct cameras
-        vector<int> cams_diff(std::max(graph1.ncams_, graph2.ncams_));
+        vector<int> cams_diff(std::min(graph1.ncams_, graph2.ncams_));
         iter = std::set_difference(graph2.cams_.begin(), graph2.cams_.end(), graph1.cams_.begin(), graph1.cams_.end(), cams_diff.begin());
         cams_diff.resize(iter - cams_diff.begin());
         
@@ -139,19 +159,53 @@ namespace open3DCV
         int ind_cam2 = graph2.index(cams_common[0]);
         Mat34f Rt1 = graph1.extrinsics_mat_[ind_cam1];
         Mat34f Rt2 = graph2.extrinsics_mat_[ind_cam2];
-        Mat34f Rt21 = concat_Rt(Rt1, inv_Rt(Rt2));
+        // solution 1
+        Mat34f Rt21 = concat_Rt(inv_Rt(Rt1), Rt2);
         Mat34f Rt21_inv = inv_Rt(Rt21);
         for (int i = 0; i < graph2.structure_points_.size(); ++i)
         {
             Vec3f& pt3d = graph2.structure_points_[i].coords();
-            pt3d = Rt21_inv * pt3d.homogeneous();
+            pt3d = Rt21.block<3, 3>(0, 0) * pt3d + Rt21.block<3, 1>(0, 3);
+        }
+        // debug
+        if ((false))
+        {
+            Mat34f ext_mat1 = concat_Rt(graph2.extrinsics_mat_[0], Rt21_inv);
+            Mat34f ext_mat2 = concat_Rt(graph2.extrinsics_mat_[1], Rt21_inv);
+            Mat34f pose1 = graph2.intrinsics_mat_[0] * ext_mat1;
+            Mat34f pose2 = graph2.intrinsics_mat_[1] * ext_mat2;
+            for (int i = 0; i < graph2.structure_points_.size(); ++i)
+            {
+                const Vec3f& pt3d = graph2.structure_points_[i].coords();
+                Vec3f pt1 = pose1 * pt3d.homogeneous();
+                Vec3f pt2 = pose2 * pt3d.homogeneous();
+                const Vec2f& key1 = graph2.tracks_[i][0].coords();
+                const Vec2f& key2 = graph2.tracks_[i][1].coords();
+                Vec2f dx = (pt1.head<2>() / pt1(2) - key1) + (pt2.head<2>() / pt2(2) - key2);
+                std::cout << "reprojection error: " << dx.dot(dx) << std::endl;
+            }
         }
         for (int i = 0; i < cams_diff.size(); ++i)
         {
             graph1.cams_.push_back(cams_diff[i]);
-            graph1.intrinsics_mat_.push_back(graph2.intrinsics_mat_[graph2.index(cams_diff[i])]);
-            graph1.extrinsics_mat_.push_back(concat_Rt(Rt21, graph2.extrinsics_mat_[graph2.index(cams_diff[i])]));
+            const int ind_cam = graph2.index(cams_diff[i]);
+            graph1.intrinsics_mat_.push_back(graph2.intrinsics_mat_[ind_cam]);
+            graph1.extrinsics_mat_.push_back(concat_Rt(graph2.extrinsics_mat_[ind_cam], Rt21_inv));
         }
+        // solution 2
+//        Mat34f Rt21 = concat_Rt(Rt1, inv_Rt(Rt2));
+//        Mat34f Rt21_inv = inv_Rt(Rt21);
+//        for (int i = 0; i < graph2.structure_points_.size(); ++i)
+//        {
+//            Vec3f& pt3d = graph2.structure_points_[i].coords();
+//            pt3d = Rt21_inv * pt3d.homogeneous();
+//        }
+//        for (int i = 0; i < cams_diff.size(); ++i)
+//        {
+//            graph1.cams_.push_back(cams_diff[i]);
+//            graph1.intrinsics_mat_.push_back(graph2.intrinsics_mat_[graph2.index(cams_diff[i])]);
+//            graph1.extrinsics_mat_.push_back(concat_Rt(Rt21, graph2.extrinsics_mat_[graph2.index(cams_diff[i])]));
+//        }
         graph1.ncams_ = static_cast<int>(graph1.cams_.size());
         vector<size_t> indexes;
         sort<int>(graph1.cams_, graph1.cams_, indexes);
@@ -171,16 +225,45 @@ namespace open3DCV
                 // find overlapping feature tracks from common cameras
                 if (!feats_common.empty())
                 {
-                    Graph::merge_tracks(track1, track2, feats_common);
-                    is_track_connected = true;
                     // check if the structur_points are close, for debug purpose
-                    if (false)
+                    if ((false))
                     {
                         const Vec3f& pt1 = graph1.structure_points_[i].coords();
                         const Vec3f& pt2 = graph2.structure_points_[j].coords();
                         std::cout << "graph1 structure_point: " << std::endl << pt1/pt1(2) << std::endl;
                         std::cout << "graph2 structure_point: " << std::endl << pt2/pt2(2) << std::endl;
+                        
+                        std::cout << "re-triangulation" << std::endl;
+                        vector<Mat34f> poses(2);
+                        poses[0] = graph1.intrinsics_mat_[0] * graph1.extrinsics_mat_[0];
+                        poses[1] = graph1.intrinsics_mat_[1] * graph1.extrinsics_mat_[1];
+                        Structure_Point struct_pt1;
+                        triangulate_nonlinear(poses, track1, struct_pt1);
+                        const Vec3f& pt3 = struct_pt1.coords();
+                        std::cout << "graph1 structure_point: " << std::endl << pt3/pt3(2) << std::endl;
+                        
+                        poses[0] = graph2.intrinsics_mat_[0] * concat_Rt(graph2.extrinsics_mat_[0], Rt21_inv);
+                        poses[1] = graph2.intrinsics_mat_[1] * concat_Rt(graph2.extrinsics_mat_[1], Rt21_inv);
+                        Structure_Point struct_pt2;
+                        triangulate_nonlinear(poses, track2, struct_pt2);
+                        const Vec3f& pt4 = struct_pt2.coords();
+                        std::cout << "graph2 structure_point: " << std::endl << pt4/pt4(2) << std::endl;
+                        
+                        Track track3(track1);
+                        Graph::merge_tracks(track3, track2, feats_common);
+                        std::sort(track3.key_begin(), track3.key_end());
+                        poses[0] = graph1.intrinsics_mat_[0] * graph1.extrinsics_mat_[0];
+                        poses[1] = graph1.intrinsics_mat_[1] * graph1.extrinsics_mat_[1];
+                        Mat34f pose3 = graph1.intrinsics_mat_[2] * graph1.extrinsics_mat_[2];
+                        poses.push_back(pose3);
+                        Structure_Point struct_pt3;
+                        triangulate_nonlinear(poses, track3, struct_pt3);
+                        const Vec3f& pt5 = struct_pt3.coords();
+                        std::cout << "graph merged structure_point: " << std::endl << pt5/pt5(2) << std::endl;
                     }
+                    // shoud check if track contains keypoints that are not in the camera view
+                    Graph::merge_tracks(track1, track2, feats_common);
+                    is_track_connected = true;
                     break;
                 }
             }
@@ -191,12 +274,63 @@ namespace open3DCV
                 graph1.add_struct_pt(graph2.structure_points_[j]);
             }
         }
-
-        // find new features from non-overlapping cameras, this part is not needed for now
+        
+        // re-triangulation
+        triangulate_nonlinear(graph1);
+        
+        // find new features from non-overlapping cameras, this part is not needed for sequential SfM
     }
     
     bool Graph::operator<(const Graph& rhs) const
     {
-        return (cams_[0] < rhs.cams_[0]) && (cams_[1] < rhs.cams_[1]);
+        return tracks_.size() > rhs.tracks_.size();
+    }
+    
+    float Graph::baseline_angle() const
+    {
+        Mat3f rotation = extrinsics_mat_[1].block<3, 3>(0, 0);
+        Vec3f om;
+        irodrigues(om, nullptr, rotation);
+        return om.norm();
+    }
+    
+    int Graph::find_next_graph(const vector<Graph>& graphs, const Graph& graph, std::vector<int>& merged_graph)
+    {
+        int count_max = 0;
+        int ind_selected = -1;
+        for (int i = 0; i < graphs.size(); ++i)
+        {
+            if (merged_graph[i])
+                continue;
+            
+            const Graph& graph1 = graphs[i];
+            vector<int> cams_common(std::min(graph1.ncams_, graph.ncams_));
+            auto iter = std::set_intersection(graph1.cams_.begin(), graph1.cams_.end(), graph.cams_.begin(), graph.cams_.end(), cams_common.begin());
+            cams_common.resize(iter - cams_common.begin());
+            
+            if (cams_common.empty())
+                continue;
+            
+            int count = 0;
+            vector<int> tracks_common(std::min(graph1.tracks_.size(), graph.tracks_.size()));
+            for (int m = 0; m < graph.tracks_.size(); ++m)
+            {
+                for (int n = 0; n < graph1.tracks_.size(); ++n)
+                {
+                    const Track& track = graph.tracks_[m];
+                    const Track& track1 = graph1.tracks_[n];
+                    if (Track::has_overlapping_keypoints(track, track1))
+                        ++count;
+                }
+            }
+            if (count > count_max)
+            {
+                count_max = count;
+                ind_selected = i;
+            }
+        }
+        if (ind_selected > 0)
+            merged_graph[ind_selected] = 1;
+        return ind_selected;
     }
 }

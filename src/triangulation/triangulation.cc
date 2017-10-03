@@ -263,9 +263,9 @@ namespace open3DCV {
             vector<Vec2f> pts(nkeys);
             for (int j = 0; j < nkeys; ++j)
             {
-                Keypoint key = graph.tracks_[i][j];
-                int ind_cam_arr = graph.index(key.index());
-                poses[j] = graph.intrinsics_mat_[ind_cam_arr] * graph.extrinsics_mat_[ind_cam_arr];
+                const Keypoint& key = graph.tracks_[i][j];
+                int ind_cam = graph.index(key.index());
+                poses[j] = graph.intrinsics_mat_[ind_cam] * graph.extrinsics_mat_[ind_cam];
                 pts[j] = key.coords();
             }
             Vec3f& pt3d = graph.structure_points_[i].coords();

@@ -5,8 +5,10 @@
 
 namespace open3DCV
 {
-    int read_keypoints(std::vector<Keypoint>& keypoints, const std::string fname);
-    int write_keypoints(const std::vector<Keypoint>& keypoints, const std::string fname);
+    int read_keypoints(const std::string fname, std::vector<Keypoint>& keypoints);
+    int read_keypoints(const std::string fname, std::vector<Vec2f>& keys);
+    
+    int write_keypoints(const std::string fname, const std::vector<Keypoint>& keypoints);
 }
 
 #endif
