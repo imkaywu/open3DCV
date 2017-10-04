@@ -94,14 +94,96 @@ namespace open3DCV
         return -1;
     }
     
-    int Graph::size() const
+    int Graph::sz_cams() const
     {
         return static_cast<int>(cams_.size());
     }
     
-    void Graph::rm_outliers()
+    int Graph::sz_tracks() const
     {
+        return static_cast<int>(tracks_.size());
+    }
+    
+    void Graph::rm_outliers(const float thresh_reproj, const float thresh_angle)
+    {
+        const int ntracks = static_cast<int>(tracks_.size());
+        const float thresh_cos_angle = std::cos(thresh_angle * M_PI / 180.0);
+        vector<int> rm_reproj, rm_angle;
         
+        vector<Vec3f> cam_center(sz_cams());
+        for (int i = 0; i < sz_cams(); ++i)
+        {
+            Mat34f ext_mat = extrinsics_mat_[i];
+            cam_center[i] = -ext_mat.block<3, 3>(0, 0).transpose() * ext_mat.block<3, 1>(0, 3);
+        }
+        
+        bool removed = false;
+        for (int i = 0; i < ntracks; ++i)
+        {
+            removed = false;
+            const Vec3f& pt3d = structure_points_[i].coords();
+            const Track& track = tracks_[i];
+            for (int j = 0; j < track.size(); ++j)
+            {
+                int ind_cam = index(track[j].index());
+                Vec3f x = intrinsics_mat_[ind_cam] * extrinsics_mat_[ind_cam] * pt3d.homogeneous();
+                Vec2f dx = x.head<2>() / x(2) - track[j].coords();
+                if (dx.dot(dx) > thresh_reproj)
+                {
+                    rm_reproj.push_back(i);
+                    removed = true;
+                    break;
+                }
+            }
+            
+            if (removed)
+                continue;
+            
+            for (int m = 0; m < track.size(); ++m)
+            {
+                for (int n = 0; n < track.size(); ++n)
+                {
+                    if (m == n)
+                        continue;
+                    
+                    int ind_cam1 = index(track[m].index());
+                    int ind_cam2 = index(track[n].index());
+                    Vec3f dir_cam1 = pt3d - cam_center[ind_cam1];
+                    Vec3f dir_cam2 = pt3d - cam_center[ind_cam2];
+                    dir_cam1.normalize();
+                    dir_cam2.normalize();
+                    if (dir_cam1.dot(dir_cam2) > thresh_cos_angle)
+                    {
+                        rm_angle.push_back(i);
+                        removed = true;
+                        break;
+                    }
+                }
+                if (removed)
+                    break;
+            }
+        }
+        std::sort(rm_reproj.begin(), rm_reproj.end());
+        for (int i = static_cast<int>(rm_reproj.size()) - 1; i >= 0; --i)
+        {
+            rm_struct_pt(rm_reproj[i]);
+            rm_track(rm_reproj[i]);
+        }
+        std::cout << "remove " << rm_reproj.size() << " outliers out of " << ntracks << " points with reprojection error bigger than "
+                  << thresh_reproj << " pixels" << std::endl;
+        rm_reproj.clear();
+        
+        /* for image 5, 6, the fundamental matrix estimation is not accurate enough
+        std::sort(rm_angle.begin(), rm_angle.end());
+        for (int i = static_cast<int>(rm_angle.size()) - 1; i >= 0; --i)
+        {
+            rm_struct_pt(rm_angle[i]);
+            rm_track(rm_angle[i]);
+        }
+        std::cout << "remove " << rm_angle.size() << " outliers out of " << ntracks << " points with view angle less than "
+                  << thresh_angle << " degrees" << std::endl;
+        rm_angle.clear();
+         */
     }
     
     void Graph::add_track(const Track& track)
@@ -233,33 +315,36 @@ namespace open3DCV
                         std::cout << "graph1 structure_point: " << std::endl << pt1/pt1(2) << std::endl;
                         std::cout << "graph2 structure_point: " << std::endl << pt2/pt2(2) << std::endl;
                         
-                        std::cout << "re-triangulation" << std::endl;
-                        vector<Mat34f> poses(2);
-                        poses[0] = graph1.intrinsics_mat_[0] * graph1.extrinsics_mat_[0];
-                        poses[1] = graph1.intrinsics_mat_[1] * graph1.extrinsics_mat_[1];
-                        Structure_Point struct_pt1;
-                        triangulate_nonlinear(poses, track1, struct_pt1);
-                        const Vec3f& pt3 = struct_pt1.coords();
-                        std::cout << "graph1 structure_point: " << std::endl << pt3/pt3(2) << std::endl;
-                        
-                        poses[0] = graph2.intrinsics_mat_[0] * concat_Rt(graph2.extrinsics_mat_[0], Rt21_inv);
-                        poses[1] = graph2.intrinsics_mat_[1] * concat_Rt(graph2.extrinsics_mat_[1], Rt21_inv);
-                        Structure_Point struct_pt2;
-                        triangulate_nonlinear(poses, track2, struct_pt2);
-                        const Vec3f& pt4 = struct_pt2.coords();
-                        std::cout << "graph2 structure_point: " << std::endl << pt4/pt4(2) << std::endl;
-                        
-                        Track track3(track1);
-                        Graph::merge_tracks(track3, track2, feats_common);
-                        std::sort(track3.key_begin(), track3.key_end());
-                        poses[0] = graph1.intrinsics_mat_[0] * graph1.extrinsics_mat_[0];
-                        poses[1] = graph1.intrinsics_mat_[1] * graph1.extrinsics_mat_[1];
-                        Mat34f pose3 = graph1.intrinsics_mat_[2] * graph1.extrinsics_mat_[2];
-                        poses.push_back(pose3);
-                        Structure_Point struct_pt3;
-                        triangulate_nonlinear(poses, track3, struct_pt3);
-                        const Vec3f& pt5 = struct_pt3.coords();
-                        std::cout << "graph merged structure_point: " << std::endl << pt5/pt5(2) << std::endl;
+                        if ((false))
+                        {
+                            std::cout << "re-triangulation" << std::endl;
+                            vector<Mat34f> poses(2);
+                            poses[0] = graph1.intrinsics_mat_[0] * graph1.extrinsics_mat_[0];
+                            poses[1] = graph1.intrinsics_mat_[1] * graph1.extrinsics_mat_[1];
+                            Structure_Point struct_pt1;
+                            triangulate_nonlinear(poses, track1, struct_pt1);
+                            const Vec3f& pt3 = struct_pt1.coords();
+                            std::cout << "graph1 structure_point: " << std::endl << pt3/pt3(2) << std::endl;
+                            
+                            poses[0] = graph2.intrinsics_mat_[0] * concat_Rt(graph2.extrinsics_mat_[0], Rt21_inv);
+                            poses[1] = graph2.intrinsics_mat_[1] * concat_Rt(graph2.extrinsics_mat_[1], Rt21_inv);
+                            Structure_Point struct_pt2;
+                            triangulate_nonlinear(poses, track2, struct_pt2);
+                            const Vec3f& pt4 = struct_pt2.coords();
+                            std::cout << "graph2 structure_point: " << std::endl << pt4/pt4(2) << std::endl;
+                            
+                            Track track3(track1);
+                            Graph::merge_tracks(track3, track2, feats_common);
+                            std::sort(track3.key_begin(), track3.key_end());
+                            poses[0] = graph1.intrinsics_mat_[0] * graph1.extrinsics_mat_[0];
+                            poses[1] = graph1.intrinsics_mat_[1] * graph1.extrinsics_mat_[1];
+                            Mat34f pose3 = graph1.intrinsics_mat_[2] * graph1.extrinsics_mat_[2];
+                            poses.push_back(pose3);
+                            Structure_Point struct_pt3;
+                            triangulate_nonlinear(poses, track3, struct_pt3);
+                            const Vec3f& pt5 = struct_pt3.coords();
+                            std::cout << "graph merged structure_point: " << std::endl << pt5/pt5(2) << std::endl;
+                        }
                     }
                     // shoud check if track contains keypoints that are not in the camera view
                     Graph::merge_tracks(track1, track2, feats_common);
@@ -286,6 +371,7 @@ namespace open3DCV
         return tracks_.size() > rhs.tracks_.size();
     }
     
+    // for 2-view graphs only
     float Graph::baseline_angle() const
     {
         Mat3f rotation = extrinsics_mat_[1].block<3, 3>(0, 0);
@@ -333,4 +419,5 @@ namespace open3DCV
             merged_graph[ind_selected] = 1;
         return ind_selected;
     }
+    
 }

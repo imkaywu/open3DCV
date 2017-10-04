@@ -155,7 +155,7 @@ namespace open3DCV
     
     vector<Vec6> pack_camera_extrinsics(const Graph&graph)
     {
-        vector<Vec6> extrinsics(graph.size());
+        vector<Vec6> extrinsics(graph.sz_cams());
         for (int i = 0; i < graph.extrinsics_mat_.size(); ++i)
         {
             Mat3 R = graph.extrinsics_mat_[i].block<3, 3>(0, 0).cast<double>();
@@ -179,7 +179,7 @@ namespace open3DCV
     
     vector<Vec8> pack_camera_intrinsics(const Graph& graph)
     {
-        vector<Vec8> intrinsics(graph.size());
+        vector<Vec8> intrinsics(graph.sz_cams());
         for (int i = 0; i < graph.intrinsics_mat_.size(); ++i)
         {
             Mat3 K = graph.intrinsics_mat_[i].cast<double>();

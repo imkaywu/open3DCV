@@ -19,18 +19,19 @@ namespace open3DCV
         void init(const Graph& graph);
         void init(const Pair& pair);
         int index(int icam) const;
-        int size() const; // number of 3D points
-        void rm_outliers();
+        int sz_cams() const; // number of cameras;
+        int sz_tracks() const; // number of feature tracks;
         void add_track(const Track& track);
         void rm_track(int index);
         void add_struct_pt(const Structure_Point& struct_pt);
         void rm_struct_pt(int index);
+        void rm_outliers(const float thresh_reproj, const float thresh_angle);
         bool operator<(const Graph& rhs) const;
         float baseline_angle() const;
         static void merge_graph(Graph& graph1, Graph& graph2);
         static void merge_tracks(Track& track1, const Track& track2, std::vector<std::pair<int, int> >& ind_key);
         static int find_next_graph(const std::vector<Graph>& graphs, const Graph& graph, std::vector<int>& merged_graph);
-        
+
         int ncams_;
         std::vector<int> cams_;
         Mat3f F_; // to be deleted

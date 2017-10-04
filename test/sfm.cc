@@ -23,8 +23,10 @@ int main(const int argc, const char** argv)
     string odir = "templeRing/";
     string idir = "/Users/BlacKay/Documents/Projects/Images/test/sfm/"+odir;
     bool is_vis = true;
+    bool update_focal = false;
+    bool update_intrinsic = false;
     bool read_from_file = true;
-    const float bs_angle_thre[2] = {3.0 / 180.0 * M_PI, 70.0 / 180.0f * M_PI};
+    const float thresh_bl_angle[2] = {2.0 / 180.0 * M_PI, 70.0 / 180.0f * M_PI};
     
     // -------------------------------------------------
     // read images
@@ -34,8 +36,7 @@ int main(const int argc, const char** argv)
     vector<Image> images(nimages);
     for (int i = 0; i < nimages; ++i)
     {
-//        sprintf(iname, "%s/B%02d.jpg", idir.c_str(), 21+i);
-        sprintf(iname, "%s/%08d.jpg", idir.c_str(), i+1);
+        sprintf(iname, "%s/%08d.jpg", idir.c_str(), i);
         images[i].read(iname);
     }
     
@@ -135,7 +136,7 @@ int main(const int argc, const char** argv)
         // ------ estimate Fundamental matrix ------
         vector<float> params(9);
         int *vote_inlier = new int[nmatches];
-        Param_Estimator<DMatch, float>* fund_esti = new open3DCV::Fundamental_Estimator(10e-8);
+        Param_Estimator<DMatch, float>* fund_esti = new open3DCV::Fundamental_Estimator(1e-8);
         float ratio_inlier = Ransac<DMatch, float>::estimate(fund_esti, pair.matches_, params, 0.99, vote_inlier);
         std::cout << "ratio of matching inliers: " << ratio_inlier << std::endl;
         if (ratio_inlier < ratio_inlier_thre)
@@ -151,21 +152,25 @@ int main(const int argc, const char** argv)
         pair.update_matches(vote_inlier);
         std::cout << "number of matches: " << pair.matches_.size() << std::endl;
         
+        // non-linear refinement of Fundamental matrix
+//        fund_esti.nl_estimate(
+        
         // ------ estimate relative pose ------
 //        const float f = 719.5459;
 //        const int w = 480, h = 640;
         const float f = 1520.4;
         const int w = 302.32*2, h = 246.87*2;
-        pair.update_intrinsics(f, w, h);
+        pair.update_intrinsics(f, 0, 0);
         pair.E_ = pair.intrinsics_mat_[1].transpose() * pair.F_ * pair.intrinsics_mat_[0];
         Rt_from_E(pair);
         
         // ------ filter pair using baseline angle ------
         float angle = pair.baseline_angle();
-        if (angle < bs_angle_thre[0] || angle > bs_angle_thre[1])
+        if (angle < thresh_bl_angle[0] || angle > thresh_bl_angle[1])
             continue;
         
         // ------ init graph from pair ------
+        pair.update_intrinsics(f, w, h);
         Graph graph(pair);
         
         // ------ triangulate ------
@@ -177,14 +182,18 @@ int main(const int argc, const char** argv)
         
         // ------ bundle adjustment ------
         cout << "------ start bundle adjustment ------" << endl;
-        Open3DCVBundleAdjustment(graph, BUNDLE_INTRINSICS);
+        Open3DCVBundleAdjustment(graph, BUNDLE_NO_INTRINSICS);
+        if (update_focal)
+            Open3DCVBundleAdjustment(graph, BUNDLE_FOCAL_LENGTH);
+        else if (update_intrinsic)
+            Open3DCVBundleAdjustment(graph, BUNDLE_INTRINSICS);
         cout << "------ end bundle adjustment ------" << endl;
         error = reprojection_error(graph);
         std::cout << "reprojection error (after bundle adjustment): " << error << std::endl;
         
         // ------ filter pair using baseline angle ------
         angle = graph.baseline_angle();
-        if (angle < bs_angle_thre[0] || angle > bs_angle_thre[1])
+        if (angle < thresh_bl_angle[0] || angle > thresh_bl_angle[1])
             continue;
         
         delete [] vote_inlier;
@@ -201,7 +210,7 @@ int main(const int argc, const char** argv)
         graphs.push_back(graph);
         
         // visualize matching inliers
-        if ((false))
+        if ((is_vis))
         {
             draw_matches(images[ind1], images[ind2], pair.matches_, odir+"matching_inlier"+to_string(ind1+1)+"_"+to_string(ind2+1));
         }
@@ -233,6 +242,8 @@ int main(const int argc, const char** argv)
     // N-view SfM
     // -------------------------------------------------
     // find a more elegant way to deal with the first graph
+    const float thresh_reproj = 2.0f;
+    const float thresh_angle = 2.0f;
     vector<int> merged_graph(graphs.size());
     fill(merged_graph.begin(), merged_graph.end(), 0);
     merged_graph[0] = 1;
@@ -254,7 +265,25 @@ int main(const int argc, const char** argv)
         
         // ------ N-view bundle adjustment ------
         cout << "------ start bundle adjustment ------" << endl;
-        Open3DCVBundleAdjustment(global_graph, BUNDLE_INTRINSICS);
+        Open3DCVBundleAdjustment(global_graph, BUNDLE_NO_INTRINSICS);
+        if (update_focal)
+            Open3DCVBundleAdjustment(global_graph, BUNDLE_FOCAL_LENGTH);
+        else if (update_intrinsic)
+            Open3DCVBundleAdjustment(global_graph, BUNDLE_INTRINSICS);
+        cout << "------ end bundle adjustment ------" << endl;
+        error = reprojection_error(global_graph);
+        std::cout << "reprojection error (after bundle adjustment): " << error << std::endl;
+        
+        // ------ outlier rejection ------
+        global_graph.rm_outliers(thresh_reproj, thresh_angle);
+        
+        // ------ N-view bundle adjustment ------
+        cout << "------ start bundle adjustment ------" << endl;
+        Open3DCVBundleAdjustment(global_graph, BUNDLE_NO_INTRINSICS);
+        if (update_focal)
+            Open3DCVBundleAdjustment(global_graph, BUNDLE_FOCAL_LENGTH);
+        else if (update_intrinsic)
+            Open3DCVBundleAdjustment(global_graph, BUNDLE_INTRINSICS);
         cout << "------ end bundle adjustment ------" << endl;
         error = reprojection_error(global_graph);
         std::cout << "reprojection error (after bundle adjustment): " << error << std::endl;
@@ -263,6 +292,8 @@ int main(const int argc, const char** argv)
         {
             error = reprojection_error(global_graph);
         }
+        
+        write_sfm(global_graph);
     }
     
     // -------------------------------------------------
