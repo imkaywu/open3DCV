@@ -160,6 +160,12 @@ namespace open3DCV
         {
             Mat3 R = graph.extrinsics_mat_[i].block<3, 3>(0, 0).cast<double>();
             ceres::RotationMatrixToAngleAxis(&R(0, 0), &extrinsics[i](0));
+            
+//            Mat3f R = graph.extrinsics_mat_[i].block<3, 3>(0, 0);
+//            Vec3f om;
+//            irodrigues(om, nullptr, R);
+//            extrinsics[i].head<3>() = om.cast<double>();
+            
             extrinsics[i].tail<3>() = graph.extrinsics_mat_[i].cast<double>().block<3, 1>(0, 3);
         }
         
@@ -172,6 +178,12 @@ namespace open3DCV
         {
             Mat3 R;
             ceres::AngleAxisToRotationMatrix(&extrinsics[i](0), &R(0, 0));
+            
+//            Vec3f om;
+//            Mat3f R;
+//            om = extrinsics[i].head<3>().cast<float>();
+//            rodrigues(R, nullptr, om);
+            
             graph.extrinsics_mat_[i].block<3, 3>(0, 0) = R.cast<float>();
             graph.extrinsics_mat_[i].block<3, 1>(0, 3) = extrinsics[i].tail<3>().cast<float>();
         }

@@ -8,7 +8,7 @@
 #include "estimator/ransac.h"
 #include "estimator/est_Rt_from_E.h"
 #include "triangulation/triangulation.h"
-#include "sfm/bundle_adjust.h"
+#include "sfm/sfm_bundle_adjuster.h"
 #include "sfm/graph.h"
 #include "viz/plot.h"
 #include "io/keypoint_io.h"
@@ -27,6 +27,10 @@ int main(const int argc, const char** argv)
     bool update_intrinsic = false;
     bool read_from_file = true;
     const float thresh_bl_angle[2] = {2.0 / 180.0 * M_PI, 70.0 / 180.0f * M_PI};
+    const float thresh_inlier_ratio = 0.6;
+    const float thresh_reproj0 = 2.0f;
+    const float thresh_reproj1 = 1.0f;
+    const float thresh_angle = 2.0f;
     
     // -------------------------------------------------
     // read images
@@ -120,8 +124,6 @@ int main(const int argc, const char** argv)
     // 2-view SfM
     // -------------------------------------------------
     vector<Graph> graphs;
-    const float reproj_error_thre = 1.0;
-    const float ratio_inlier_thre = 0.6;
     for (int i = 0; i < pairs.size(); ++i)
     {
         // ------ image pair ------
@@ -139,7 +141,7 @@ int main(const int argc, const char** argv)
         Param_Estimator<DMatch, float>* fund_esti = new open3DCV::Fundamental_Estimator(1e-8);
         float ratio_inlier = Ransac<DMatch, float>::estimate(fund_esti, pair.matches_, params, 0.99, vote_inlier);
         std::cout << "ratio of matching inliers: " << ratio_inlier << std::endl;
-        if (ratio_inlier < ratio_inlier_thre)
+        if (ratio_inlier < thresh_inlier_ratio)
         {
             delete [] vote_inlier;
             continue;
@@ -153,7 +155,6 @@ int main(const int argc, const char** argv)
         std::cout << "number of matches: " << pair.matches_.size() << std::endl;
         
         // non-linear refinement of Fundamental matrix
-//        fund_esti.nl_estimate(
         
         // ------ estimate relative pose ------
 //        const float f = 719.5459;
@@ -198,7 +199,7 @@ int main(const int argc, const char** argv)
         
         delete [] vote_inlier;
         
-        if (error > reproj_error_thre)
+        if (error > thresh_reproj0)
             continue;
         
         if (isnan(error))
@@ -210,7 +211,7 @@ int main(const int argc, const char** argv)
         graphs.push_back(graph);
         
         // visualize matching inliers
-        if ((is_vis))
+        if ((false))
         {
             draw_matches(images[ind1], images[ind2], pair.matches_, odir+"matching_inlier"+to_string(ind1+1)+"_"+to_string(ind2+1));
         }
@@ -223,27 +224,9 @@ int main(const int argc, const char** argv)
     sort(graphs.begin(), graphs.end());
     
     // -------------------------------------------------
-    // debug
-    // -------------------------------------------------
-    if ((false))
-    {
-        for (int i = 0; i < graphs.size(); ++i)
-        {
-            const Graph& graph = graphs[i];
-            const Mat3f rot_mat = graph.extrinsics_mat_[1].block<3, 3>(0, 0);
-            Vec3f om;
-            irodrigues(om, nullptr, rot_mat);
-            cout << "rotation axis:  " << endl << om / om.norm() << endl;
-            cout << "rotation angle: " << endl << om.norm() << endl;
-        }
-    }
-    
-    // -------------------------------------------------
     // N-view SfM
     // -------------------------------------------------
     // find a more elegant way to deal with the first graph
-    const float thresh_reproj = 2.0f;
-    const float thresh_angle = 2.0f;
     vector<int> merged_graph(graphs.size());
     fill(merged_graph.begin(), merged_graph.end(), 0);
     merged_graph[0] = 1;
@@ -275,7 +258,7 @@ int main(const int argc, const char** argv)
         std::cout << "reprojection error (after bundle adjustment): " << error << std::endl;
         
         // ------ outlier rejection ------
-        global_graph.rm_outliers(thresh_reproj, thresh_angle);
+        global_graph.rm_outliers(thresh_reproj1, thresh_angle);
         
         // ------ N-view bundle adjustment ------
         cout << "------ start bundle adjustment ------" << endl;
@@ -292,8 +275,6 @@ int main(const int argc, const char** argv)
         {
             error = reprojection_error(global_graph);
         }
-        
-        write_sfm(global_graph);
     }
     
     // -------------------------------------------------
