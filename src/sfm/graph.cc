@@ -13,8 +13,6 @@ namespace open3DCV
     {
         ncams_ = 0;
         cams_ = vector<int>();
-        F_.setZero();
-        E_.setZero();
         intrinsics_mat_ = vector<Mat3f>();
         extrinsics_mat_ = vector<Mat34f>();
         tracks_ = vector<Track>();
@@ -52,8 +50,6 @@ namespace open3DCV
         
         ncams_ = 2;
         cams_ = pair.cams_;
-        F_ = pair.F_;
-        E_ = pair.E_;
         intrinsics_mat_ = pair.intrinsics_mat_;
         extrinsics_mat_ = pair.extrinsics_mat_;
         
@@ -71,8 +67,6 @@ namespace open3DCV
     {
         ncams_ = graph.ncams_;
         cams_ = graph.cams_;
-        F_ = graph.F_;
-        E_ = graph.E_;
         intrinsics_mat_ = graph.intrinsics_mat_;
         extrinsics_mat_ = graph.extrinsics_mat_;
         tracks_.resize(graph.tracks_.size(), Track());
@@ -242,12 +236,34 @@ namespace open3DCV
         Mat34f Rt1 = graph1.extrinsics_mat_[ind_cam1];
         Mat34f Rt2 = graph2.extrinsics_mat_[ind_cam2];
         // solution 1
-        Mat34f Rt21 = concat_Rt(inv_Rt(Rt1), Rt2);
+//        Mat34f Rt21 = concat_Rt(inv_Rt(Rt1), Rt2);
+//        Mat34f Rt21_inv = inv_Rt(Rt21);
+//        for (int i = 0; i < graph2.structure_points_.size(); ++i)
+//        {
+//            Vec3f& pt3d = graph2.structure_points_[i].coords();
+//            pt3d = Rt21.block<3, 3>(0, 0) * pt3d + Rt21.block<3, 1>(0, 3);
+//        }
+//        for (int i = 0; i < cams_diff.size(); ++i)
+//        {
+//            graph1.cams_.push_back(cams_diff[i]);
+//            const int ind_cam = graph2.index(cams_diff[i]);
+//            graph1.intrinsics_mat_.push_back(graph2.intrinsics_mat_[ind_cam]);
+//            graph1.extrinsics_mat_.push_back(concat_Rt(graph2.extrinsics_mat_[ind_cam], Rt21_inv));
+//        }
+        // solution 2
+        Mat34f Rt21 = concat_Rt(Rt1, inv_Rt(Rt2));
         Mat34f Rt21_inv = inv_Rt(Rt21);
         for (int i = 0; i < graph2.structure_points_.size(); ++i)
         {
             Vec3f& pt3d = graph2.structure_points_[i].coords();
-            pt3d = Rt21.block<3, 3>(0, 0) * pt3d + Rt21.block<3, 1>(0, 3);
+            pt3d = Rt21_inv * pt3d.homogeneous();
+        }
+        for (int i = 0; i < cams_diff.size(); ++i)
+        {
+            graph1.cams_.push_back(cams_diff[i]);
+            const int ind_cam = graph2.index(cams_diff[i]);
+            graph1.intrinsics_mat_.push_back(graph2.intrinsics_mat_[ind_cam]);
+            graph1.extrinsics_mat_.push_back(concat_Rt(Rt21, graph2.extrinsics_mat_[ind_cam]));
         }
         // debug
         if ((false))
@@ -267,32 +283,11 @@ namespace open3DCV
                 std::cout << "reprojection error: " << dx.dot(dx) << std::endl;
             }
         }
-        for (int i = 0; i < cams_diff.size(); ++i)
-        {
-            graph1.cams_.push_back(cams_diff[i]);
-            const int ind_cam = graph2.index(cams_diff[i]);
-            graph1.intrinsics_mat_.push_back(graph2.intrinsics_mat_[ind_cam]);
-            graph1.extrinsics_mat_.push_back(concat_Rt(graph2.extrinsics_mat_[ind_cam], Rt21_inv));
-        }
-        // solution 2
-//        Mat34f Rt21 = concat_Rt(Rt1, inv_Rt(Rt2));
-//        Mat34f Rt21_inv = inv_Rt(Rt21);
-//        for (int i = 0; i < graph2.structure_points_.size(); ++i)
-//        {
-//            Vec3f& pt3d = graph2.structure_points_[i].coords();
-//            pt3d = Rt21_inv * pt3d.homogeneous();
-//        }
-//        for (int i = 0; i < cams_diff.size(); ++i)
-//        {
-//            graph1.cams_.push_back(cams_diff[i]);
-//            graph1.intrinsics_mat_.push_back(graph2.intrinsics_mat_[graph2.index(cams_diff[i])]);
-//            graph1.extrinsics_mat_.push_back(concat_Rt(Rt21, graph2.extrinsics_mat_[graph2.index(cams_diff[i])]));
-//        }
         graph1.ncams_ = static_cast<int>(graph1.cams_.size());
-        vector<size_t> indexes;
-        sort<int>(graph1.cams_, graph1.cams_, indexes);
-        reorder<Mat3f>(graph1.intrinsics_mat_, indexes, graph1.intrinsics_mat_);
-        reorder<Mat34f>(graph1.extrinsics_mat_, indexes, graph1.extrinsics_mat_);
+//        vector<size_t> indexes;
+//        sort<int>(graph1.cams_, graph1.cams_, indexes);
+//        reorder<Mat3f>(graph1.intrinsics_mat_, indexes, graph1.intrinsics_mat_);
+//        reorder<Mat34f>(graph1.extrinsics_mat_, indexes, graph1.extrinsics_mat_);
         
         const int ntracks = static_cast<int>(graph1.tracks_.size());
         for (int j = 0; j < graph2.tracks_.size(); ++j)
@@ -420,4 +415,18 @@ namespace open3DCV
         return ind_selected;
     }
     
+    void Graph::report_graph(const Graph& graph)
+    {
+        for (int i = 0; i < graph.tracks_.size(); ++i)
+        {
+            const Track& track = graph.tracks_[i];
+            std::cout << track.size() << " ";
+            for (int j = 0; j < track.size(); ++j)
+            {
+                const Keypoint& key = track[j];
+                std::cout << key << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
 }

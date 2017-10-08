@@ -31,11 +31,10 @@ namespace open3DCV
         static void merge_graph(Graph& graph1, Graph& graph2);
         static void merge_tracks(Track& track1, const Track& track2, std::vector<std::pair<int, int> >& ind_key);
         static int find_next_graph(const std::vector<Graph>& graphs, const Graph& graph, std::vector<int>& merged_graph);
+        static void report_graph(const Graph& graph);
 
         int ncams_;
         std::vector<int> cams_;
-        Mat3f F_; // to be deleted
-        Mat3f E_; // to be deleted
         std::vector<Mat3f> intrinsics_mat_;
         std::vector<Mat34f> extrinsics_mat_;
         std::vector<Track> tracks_;

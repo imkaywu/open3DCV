@@ -287,7 +287,7 @@ namespace open3DCV
         options.linear_solver_type = ceres::ITERATIVE_SCHUR;
         options.use_inner_iterations = true;
         options.max_num_iterations = 100;
-        options.minimizer_progress_to_stdout = true;
+        options.minimizer_progress_to_stdout = false;
 
         // solve
         ceres::Solver::Summary summary;

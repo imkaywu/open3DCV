@@ -45,7 +45,7 @@ namespace open3DCV
         return *this;
     }
     
-    const Vec2f & Keypoint::coords() const {
+    const Vec2f& Keypoint::coords() const {
         return coords_;
     }
     
@@ -96,6 +96,18 @@ namespace open3DCV
     bool Keypoint::operator<(const Keypoint& rhs) const
     {
         return index() < rhs.index();
+    }
+    
+    std::ostream& operator<<(std::ostream& ostr, const Keypoint& rhs)
+    {
+        ostr << rhs.coords().x() << " " << rhs.coords().y() << " " << rhs.index();
+        return ostr;
+    }
+    
+    std::istream& operator>>(std::istream& istr, Keypoint& rhs)
+    {
+        istr >> rhs.coords().x() >> rhs.coords().y() >> rhs.index();
+        return istr;
     }
     
     int Keypoint::is_identical(const Keypoint& key1, const Keypoint& key2)

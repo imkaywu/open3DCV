@@ -1,6 +1,7 @@
 #ifndef keypoint_h
 #define keypoint_h
 
+#include "iostream"
 #include "math/numeric.h"
 
 namespace open3DCV {
@@ -43,6 +44,8 @@ namespace open3DCV {
         const int has_orientation() const;
         
         bool operator<(const Keypoint& rhs) const;
+        friend std::ostream& operator<<(std::ostream& ostr, const Keypoint& rhs);
+        friend std::istream& operator>>(std::istream& istr, Keypoint& rhs);
         
         static int is_identical(const Keypoint& key1, const Keypoint& key2);
 

@@ -20,22 +20,22 @@ using namespace open3DCV;
 
 int main(const int argc, const char** argv)
 {
-    string odir = "templeRing/";
+    string odir = "bust/";
     string idir = "/Users/BlacKay/Documents/Projects/Images/test/sfm/"+odir;
     bool is_vis = true;
+    bool translate_image_coords = false;
     bool update_focal = false;
     bool update_intrinsic = false;
     bool read_from_file = true;
-    const float thresh_bl_angle[2] = {2.0 / 180.0 * M_PI, 70.0 / 180.0f * M_PI};
-    const float thresh_inlier_ratio = 0.6;
-    const float thresh_reproj0 = 2.0f;
+    const float thresh_bl_angle[2] = {2.0 / 180.0 * M_PI, 60.0 / 180.0f * M_PI};
+    const float thresh_reproj0 = 1.5f;
     const float thresh_reproj1 = 1.0f;
     const float thresh_angle = 2.0f;
     
     // -------------------------------------------------
     // read images
     // -------------------------------------------------
-    const int nimages = 10;
+    const int nimages = 5;
     char iname[100];
     vector<Image> images(nimages);
     for (int i = 0; i < nimages; ++i)
@@ -43,6 +43,15 @@ int main(const int argc, const char** argv)
         sprintf(iname, "%s/%08d.jpg", idir.c_str(), i);
         images[i].read(iname);
     }
+    const int width = images[0].width();
+    const int height = images[0].height();
+    Vec2f imsize(width, height);
+    
+    // -------------------------------------------------
+    // extract focal length from EXIF
+    // -------------------------------------------------
+    // TODO: Exif_io
+    const float focal_length = 719.5459; // 1520.4;
     
     // -------------------------------------------------
     // feature detection, descriptor extraction
@@ -73,6 +82,13 @@ int main(const int argc, const char** argv)
         {
             string fname = odir+"feature"+to_string(i+1)+".txt";
             read_keypoints(fname, keys[i]);
+            if (translate_image_coords)
+            {
+                for (int j = 0; j < keys[i].size(); ++j)
+                {
+                    keys[i][j].coords() = (imsize/2.0 - keys[i][j].coords()).eval();
+                }
+            }
         }
     }
     
@@ -114,6 +130,15 @@ int main(const int argc, const char** argv)
                 vector<DMatch>& matches = matches_pairwise[i][j-(i+1)];
                 string fname = odir+"matching"+to_string(i+1)+"_"+to_string(j+1)+".txt";
                 read_matches(fname, matches);
+                if (translate_image_coords)
+                {
+                    for (int m = 0; m < matches.size(); ++m)
+                    {
+                        DMatch& match = matches[m];
+                        match.point_.first = (imsize/2.0 - match.point_.first).eval();
+                        match.point_.second = (imsize/2.0 - match.point_.second).eval();
+                    }
+                }
                 pairs.push_back(Pair(i, j, matches));
             }
         }
@@ -141,11 +166,6 @@ int main(const int argc, const char** argv)
         Param_Estimator<DMatch, float>* fund_esti = new open3DCV::Fundamental_Estimator(1e-8);
         float ratio_inlier = Ransac<DMatch, float>::estimate(fund_esti, pair.matches_, params, 0.99, vote_inlier);
         std::cout << "ratio of matching inliers: " << ratio_inlier << std::endl;
-        if (ratio_inlier < thresh_inlier_ratio)
-        {
-            delete [] vote_inlier;
-            continue;
-        }
         pair.F_ << params[0], params[3], params[6],
                    params[1], params[4], params[7],
                    params[2], params[5], params[8];
@@ -153,15 +173,13 @@ int main(const int argc, const char** argv)
         // remove outliers
         pair.update_matches(vote_inlier);
         std::cout << "number of matches: " << pair.matches_.size() << std::endl;
+        delete [] vote_inlier;
         
-        // non-linear refinement of Fundamental matrix
+        // TODO: non-linear refinement of Fundamental matrix
+        
         
         // ------ estimate relative pose ------
-//        const float f = 719.5459;
-//        const int w = 480, h = 640;
-        const float f = 1520.4;
-        const int w = 302.32*2, h = 246.87*2;
-        pair.update_intrinsics(f, 0, 0);
+        pair.update_intrinsics(focal_length, width, height);
         pair.E_ = pair.intrinsics_mat_[1].transpose() * pair.F_ * pair.intrinsics_mat_[0];
         Rt_from_E(pair);
         
@@ -171,7 +189,6 @@ int main(const int argc, const char** argv)
             continue;
         
         // ------ init graph from pair ------
-        pair.update_intrinsics(f, w, h);
         Graph graph(pair);
         
         // ------ triangulate ------
@@ -179,7 +196,7 @@ int main(const int argc, const char** argv)
         
         // compute reprojection error
         float error = reprojection_error(graph);
-        std::cout << "reprojection error (before bundle adjustment): " << error << std::endl;
+        std::cout << "reprojection error (BEFORE bundle adjustment): " << error << std::endl;
         
         // ------ bundle adjustment ------
         cout << "------ start bundle adjustment ------" << endl;
@@ -190,18 +207,18 @@ int main(const int argc, const char** argv)
             Open3DCVBundleAdjustment(graph, BUNDLE_INTRINSICS);
         cout << "------ end bundle adjustment ------" << endl;
         error = reprojection_error(graph);
-        std::cout << "reprojection error (after bundle adjustment): " << error << std::endl;
+        std::cout << "reprojection error (AFTER bundle adjustment): " << error << std::endl;
         
         // ------ filter pair using baseline angle ------
         angle = graph.baseline_angle();
         if (angle < thresh_bl_angle[0] || angle > thresh_bl_angle[1])
             continue;
         
-        delete [] vote_inlier;
-        
+        // ------ filter pair based on reprojection error ------
         if (error > thresh_reproj0)
             continue;
         
+        // somehow, error is nan, here is for debugging purpose
         if (isnan(error))
         {
             error = reprojection_error(graph);
@@ -226,7 +243,7 @@ int main(const int argc, const char** argv)
     // -------------------------------------------------
     // N-view SfM
     // -------------------------------------------------
-    // find a more elegant way to deal with the first graph
+    // TODO: find a more elegant way to deal with the first graph
     vector<int> merged_graph(graphs.size());
     fill(merged_graph.begin(), merged_graph.end(), 0);
     merged_graph[0] = 1;
@@ -244,7 +261,7 @@ int main(const int argc, const char** argv)
         // ------ N-view triangulation ------
         triangulate_nonlinear(global_graph);
         float error = reprojection_error(global_graph);
-        std::cout << "reprojection error (before bundle adjustment): " << error << std::endl;
+        std::cout << "reprojection error (BEFORE bundle adjustment): " << error << std::endl;
         
         // ------ N-view bundle adjustment ------
         cout << "------ start bundle adjustment ------" << endl;
@@ -255,7 +272,7 @@ int main(const int argc, const char** argv)
             Open3DCVBundleAdjustment(global_graph, BUNDLE_INTRINSICS);
         cout << "------ end bundle adjustment ------" << endl;
         error = reprojection_error(global_graph);
-        std::cout << "reprojection error (after bundle adjustment): " << error << std::endl;
+        std::cout << "reprojection error (AFTER bundle adjustment): " << error << std::endl;
         
         // ------ outlier rejection ------
         global_graph.rm_outliers(thresh_reproj1, thresh_angle);
@@ -269,11 +286,20 @@ int main(const int argc, const char** argv)
             Open3DCVBundleAdjustment(global_graph, BUNDLE_INTRINSICS);
         cout << "------ end bundle adjustment ------" << endl;
         error = reprojection_error(global_graph);
-        std::cout << "reprojection error (after bundle adjustment): " << error << std::endl;
+        std::cout << "reprojection error (AFTER bundle adjustment): " << error << std::endl;
         
         if (isnan(error))
         {
             error = reprojection_error(global_graph);
+        }
+    }
+    if ((false))
+    {
+        for (int i = 0; i < global_graph.ncams_; ++i)
+        {
+            const Mat34f pose = global_graph.extrinsics_mat_[i];
+            Vec3f center = -pose.block<3, 3>(0, 0).transpose() * pose.block<3, 1>(0, 3);
+            cout << "center: " << center.transpose() << endl;
         }
     }
     
