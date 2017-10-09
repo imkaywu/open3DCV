@@ -24,17 +24,17 @@ method that estimates fundamental matrix using eight corresponding pairs. The fu
 
 #### Robust estimation using RANSAC
 ```cpp
-void estimate(std::vector<std::pair<Vec2f, Vec2f> >& data, std::vector<float>& params);
+void estimate(std::vector<DMatch>& data, std::vector<float>& params);
 ```
 method inherited from class `Param_Estimator`, which is used within the `Ransac` class to estimate parameters using either seven-point or eight-point algorithm. I suggest to use seven point algorithm since fewer data requires fewer iterations.
 
 ```cpp
-void ls_estimate(std::vector<std::pair<Vec2f, Vec2f> >& data, std::vector<float>& params);
+void ls_estimate(std::vector<DMatch>& data, std::vector<float>& params);
 ```
 method that uses eight-point algorithm to estimate the least squares solution. This method is invoked at the end of RANSAC once the inliers have been detected.
 
 ```cpp
-int check_inliers(std::pair<Vec2f, Vec2f>& data, std::vector<float>& params);
+int check_inliers(std::pair<DMatch>& data, std::vector<float>& params);
 ```
 method used to see if the data fits the estimated model.
 

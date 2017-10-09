@@ -19,7 +19,8 @@ namespace open3DCV {
     
     // The only member that must be set is coords_
     // for SfM, index_ must be set, id_ is optional
-    class Keypoint {
+    class Keypoint
+    {
     public:
         Keypoint();
         Keypoint(const Vec2f &r_x);

@@ -4,7 +4,8 @@
 namespace open3DCV
 {
     // overview of SIFT detector parameters: http://www.vlfeat.org/api/sift.html#sift-intro-detector
-    class SiftParam {
+    class SiftParam
+    {
     public:
         SiftParam();
         SiftParam(int num_octaves,

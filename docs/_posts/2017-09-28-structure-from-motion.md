@@ -2,7 +2,7 @@
 layout: page
 title: "Structure from Motion"
 category: tut
-order: 0
+order: 1
 ---
 
 Visit the tutorial with example and code [here](https://imkaywu.github.io/tutorials/sfm/).
