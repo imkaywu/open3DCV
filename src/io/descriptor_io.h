@@ -5,8 +5,8 @@
 
 namespace open3DCV
 {
-    int read_descriptors(std::vector<Vecf>& descriptors, const std::string fname);
-    int write_descriptors(const std::vector<Vecf>& descriptors, const std::string fname);
+    int read_descriptors(const std::string fname, std::vector<Vecf>& descriptors);
+    int write_descriptors(const std::string fname, const std::vector<Vecf>& descriptors);
 }
 
 #endif

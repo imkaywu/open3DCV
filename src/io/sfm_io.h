@@ -5,8 +5,7 @@
 
 namespace open3DCV
 {
-    void read_sfm(const std::string fname, Graph& graph);
-    void write_sfm(const Graph& graph);
+    int write_sfm(const std::string dir, const Graph& graph);
 }
 
 #endif

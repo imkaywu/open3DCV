@@ -2,7 +2,7 @@
 
 namespace open3DCV
 {
-    int read_descriptors(vector<Vecf>& desc, const string fname)
+    int read_descriptors(const string fname, vector<Vecf>& desc)
     {
         std::ifstream ifstr;
         ifstr.open(fname, std::ifstream::in);
@@ -25,7 +25,7 @@ namespace open3DCV
         return 0;
     }
     
-    int write_descriptors(const vector<Vecf>& desc, const string fname)
+    int write_descriptors(const string fname, const vector<Vecf>& desc)
     {
         std::ofstream ofstr;
         ofstr.open(fname, std::ofstream::out);

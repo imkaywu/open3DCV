@@ -20,7 +20,7 @@ using namespace open3DCV;
 
 int main(const int argc, const char** argv)
 {
-    string odir = "bust/";
+    string odir = "bust";
     string idir = "/Users/BlacKay/Documents/Projects/Images/test/sfm/"+odir;
     bool is_vis = true;
     bool translate_image_coords = false;
@@ -56,7 +56,7 @@ int main(const int argc, const char** argv)
     // -------------------------------------------------
     // feature detection, descriptor extraction
     // -------------------------------------------------
-    Sift_Params sift_param(3, 3, 0, 10.0f/255, 1, -INFINITY, 3, 2);
+    SiftParam sift_param(3, 3, 0, 10.0f/255, 1, -INFINITY, 3, 2);
     Sift sift(sift_param);
     vector<vector<Keypoint> > keys(nimages, vector<Keypoint>());
     vector<vector<Vecf> > descs(nimages, vector<Vecf>());
@@ -67,11 +67,11 @@ int main(const int argc, const char** argv)
             sift.detect_keypoints(images[i], keys[i], 0);
             sift.extract_descriptors(images[i], keys[i], descs[i]);
             sift.clear();
-            string fname = odir+"feature"+to_string(i+1)+".txt";
+            string fname = odir+"/feature"+to_string(i+1)+".txt";
             write_keypoints(fname, keys[i]);
             if ((false))
             {
-                draw_cross(images[i], keys[i], odir+"feature"+to_string(i+1));
+                draw_cross(images[i], keys[i], odir+"/feature"+to_string(i+1));
             }
             cout << "Image " << i + 1 << ": " << "features number: " << keys[i].size() << endl;
         }
@@ -80,7 +80,7 @@ int main(const int argc, const char** argv)
     {
         for (int i = 0; i < nimages; ++i)
         {
-            string fname = odir+"feature"+to_string(i+1)+".txt";
+            string fname = odir+"/feature"+to_string(i+1)+".txt";
             read_keypoints(fname, keys[i]);
             if (translate_image_coords)
             {
@@ -110,11 +110,11 @@ int main(const int argc, const char** argv)
                 matcher.match(descs[i], descs[j], matches);
                 matcher.matching_keys(keys[i], keys[j], matches);
                 pairs.push_back(Pair(i, j, matches));
-                string fname = odir+"matching"+to_string(i+1)+"_"+to_string(j+1)+".txt";
+                string fname = odir+"/matching"+to_string(i+1)+"_"+to_string(j+1)+".txt";
                 write_matches(fname, matches);
                 if ((false))
                 {
-                    draw_matches(images[i], keys[i], images[j], keys[j], matches, odir+"matching"+to_string(i+1)+"_"+to_string(j+1));
+                    draw_matches(images[i], keys[i], images[j], keys[j], matches, odir+"/matching"+to_string(i+1)+"_"+to_string(j+1));
                 }
                 cout << "Image (" << i+1 << ", " << j+1 << "): matches number: " << matches.size() << endl;
             }
@@ -128,7 +128,7 @@ int main(const int argc, const char** argv)
             for (int j = i+1; j < nimages; ++j)
             {
                 vector<DMatch>& matches = matches_pairwise[i][j-(i+1)];
-                string fname = odir+"matching"+to_string(i+1)+"_"+to_string(j+1)+".txt";
+                string fname = odir+"/matching"+to_string(i+1)+"_"+to_string(j+1)+".txt";
                 read_matches(fname, matches);
                 if (translate_image_coords)
                 {
@@ -230,12 +230,12 @@ int main(const int argc, const char** argv)
         // visualize matching inliers
         if ((false))
         {
-            draw_matches(images[ind1], images[ind2], pair.matches_, odir+"matching_inlier"+to_string(ind1+1)+"_"+to_string(ind2+1));
+            draw_matches(images[ind1], images[ind2], pair.matches_, odir+"/matching_inlier"+to_string(ind1+1)+"_"+to_string(ind2+1));
         }
         // visualize epipolar geometry
         if (is_vis)
         {
-            draw_epipolar_geometry(images[ind1], images[ind2], pair.F_, pair.matches_, odir+"epipolar"+to_string(ind1+1)+"_"+to_string(ind2+1));
+            draw_epipolar_geometry(images[ind1], images[ind2], pair.F_, pair.matches_, odir+"/epipolar"+to_string(ind1+1)+"_"+to_string(ind2+1));
         }
     }
     sort(graphs.begin(), graphs.end());
@@ -306,6 +306,6 @@ int main(const int argc, const char** argv)
     // -------------------------------------------------
     // Output
     // -------------------------------------------------
-    write_sfm(global_graph);
+    write_sfm(odir, global_graph);
     return 0;
 }

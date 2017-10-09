@@ -70,7 +70,7 @@ namespace open3DCV
         for (int i = 0; i < keypoints.size(); ++i)
         {
             const Keypoint& key = keypoints[i];
-            ofstr << key.coords()(0) << " " << key.coords()(1) << " " << key.scale() << " " << key.orientation() << std::endl;
+            ofstr << key.index() << " " << key.coords()(0) << " " << key.coords()(1) << " " << key.scale() << " " << key.orientation() << std::endl;
         }
         ofstr.close();
         

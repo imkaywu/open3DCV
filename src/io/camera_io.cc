@@ -2,7 +2,7 @@
 //
 //namespace open3DCV
 //{
-//    void read_camera(const std::string file, const int param_type)
+//    void read_camera(const std::string fname, const int param_type)
 //    {
 //        cname_ = cname;
 //        
@@ -46,7 +46,7 @@
 //        updateProjection();
 //    }
 //    
-//    void write_camera(const std::string file, const int param_type)
+//    void write_camera(const std::string fname, const int param_type)
 //    {
 //        ofstream ofstr;
 //        ofstr.open(cname_.c_str());

@@ -13,17 +13,16 @@ namespace open3DCV {
     
     Sift::Sift() : data_(nullptr), sift_filter_(nullptr)
     {
-        type_ = SIFT;
+        // no op
     }
     
-    Sift::Sift(const Sift_Params& sift_params) : sift_params_(sift_params), data_(nullptr), sift_filter_(nullptr)
+    Sift::Sift(const SiftParam& sift_param) : sift_param_(sift_param), data_(nullptr), sift_filter_(nullptr)
     {
-        type_ = SIFT;
+        // no op
     }
     
     Sift::Sift(Image& image) : data_(nullptr), sift_filter_(nullptr)
     {
-        type_ = SIFT;
         convert(image);
     }
     
@@ -75,9 +74,9 @@ namespace open3DCV {
         return 0;
     }
     
-    void Sift::set_params(const Sift_Params& r_params)
+    void Sift::set_params(const SiftParam& r_params)
     {
-        sift_params_ = r_params;
+        sift_param_ = r_params;
     }
     
     int Sift::detect_keypoints(const Image& image, vector<Keypoint> &keypoints, int verbose)
@@ -86,12 +85,12 @@ namespace open3DCV {
                                         sift_filter_->height != image.height()))
         {
             vl_sift_delete(sift_filter_);
-            const int first_octave = get_valid_first_octave(sift_params_.first_octave_, image.width(), image.height());
+            const int first_octave = get_valid_first_octave(sift_param_.first_octave_, image.width(), image.height());
             sift_filter_ = vl_sift_new(image.width(), image.height(),
-                                       sift_params_.num_octaves_,
-                                       sift_params_.num_levels_, first_octave);
-            vl_sift_set_edge_thresh(sift_filter_, sift_params_.edge_thresh_);
-            vl_sift_set_peak_thresh(sift_filter_, sift_params_.peak_thresh_);
+                                       sift_param_.num_octaves_,
+                                       sift_param_.num_levels_, first_octave);
+            vl_sift_set_edge_thresh(sift_filter_, sift_param_.edge_thresh_);
+            vl_sift_set_peak_thresh(sift_filter_, sift_param_.peak_thresh_);
         }
         
         if (data_ == nullptr)
@@ -115,7 +114,7 @@ namespace open3DCV {
                 
                 for (int j = 0; j < nangles; ++j)
                 {
-                    Keypoint keypoint(Vec2f(vl_keypoints[i].x + 1, vl_keypoints[i].y + 1), type_);
+                    Keypoint keypoint(Vec2f(vl_keypoints[i].x + 1, vl_keypoints[i].y + 1), SIFT);
                     keypoint.scale() = vl_keypoints[i].sigma;
                     keypoint.orientation() = angles[j];
                     keypoints.push_back(keypoint);
@@ -140,10 +139,10 @@ namespace open3DCV {
             sift_filter_->height == image.height())
         {
             vl_sift_delete(sift_filter_);
-            const int first_octave = get_valid_first_octave(sift_params_.first_octave_, image.width(), image.height());
+            const int first_octave = get_valid_first_octave(sift_param_.first_octave_, image.width(), image.height());
             sift_filter_ = vl_sift_new(image.width(), image.height(),
-                                       sift_params_.num_octaves_,
-                                       sift_params_.num_levels_, first_octave);
+                                       sift_param_.num_octaves_,
+                                       sift_param_.num_levels_, first_octave);
         }
         // sift keypoint
         VlSiftKeypoint sift_keypoint;
@@ -165,7 +164,7 @@ namespace open3DCV {
         descriptor.resize(128);
         vl_sift_calc_keypoint_descriptor(sift_filter_, descriptor.data(), &sift_keypoint, keypoint.orientation());
         
-        if(sift_params_.root_sift_)
+        if(sift_param_.root_sift_)
         {
             convert_root_sift(descriptor);
         }
@@ -180,10 +179,10 @@ namespace open3DCV {
             sift_filter_->height == image.height())
         {
             vl_sift_delete(sift_filter_);
-            const int first_octave = get_valid_first_octave(sift_params_.first_octave_, image.width(), image.height());
+            const int first_octave = get_valid_first_octave(sift_param_.first_octave_, image.width(), image.height());
             sift_filter_ = vl_sift_new(image.width(), image.height(),
-                                       sift_params_.num_octaves_,
-                                       sift_params_.num_levels_, first_octave);
+                                       sift_param_.num_octaves_,
+                                       sift_param_.num_levels_, first_octave);
         }
         // sift keypoints
         vector<VlSiftKeypoint> sift_keypoints(keypoints.size());
@@ -214,7 +213,7 @@ namespace open3DCV {
             vl_status = vl_sift_process_next_octave(sift_filter_);
         }
         
-        if (sift_params_.root_sift_)
+        if (sift_param_.root_sift_)
         {
             for (int i = 0; i < descriptors.size(); ++i)
             {
