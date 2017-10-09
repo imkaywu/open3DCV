@@ -52,3 +52,10 @@ method that returns two rotation matrices and two translation vectors due to amb
 void Rt_from_E(Pair& pair);
 ```
 class `Pair` is a data structure that stores various information of two views, including relative pose, matching points, and so on. This method invokes the `void Rt_from_E(const Mat3f& E, std::vector<Mat3f>& R, std::vector<Vec3f>& t)` method, and then eliminates ambiguity by ensuring that the reconstructed structure is in front of the two views.
+
+### Essential Matrix
+`class Essential_Estimator`
+
+
+### Homography
+`class Homography_Estimator`

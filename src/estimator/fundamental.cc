@@ -1,3 +1,4 @@
+#include "estimator/utils.h"
 #include "estimator/fundamental.h"
 #include "RpolyPlusPlus/find_polynomial_roots_jenkins_traub.h"
 

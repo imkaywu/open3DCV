@@ -1,7 +1,7 @@
 #include <set>
 #include <vector>
 #include <limits>
-#include "estimator/ransac.h"
+#include "robust_estimator/ransac.h"
 
 using std::vector;
 

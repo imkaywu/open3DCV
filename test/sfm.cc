@@ -5,7 +5,7 @@
 #include "matching/matcher_flann.h"
 #include "matching/pair.h"
 #include "estimator/fundamental.h"
-#include "estimator/ransac.h"
+#include "robust_estimator/ransac.h"
 #include "estimator/est_Rt_from_E.h"
 #include "triangulation/triangulation.h"
 #include "sfm/sfm_bundle_adjuster.h"

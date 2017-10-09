@@ -2,7 +2,7 @@
 layout: page
 title: "Triangulation"
 category: doc
-order: 7
+order: 8
 ---
 
 ### Linear triangulation

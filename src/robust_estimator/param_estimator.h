@@ -1,10 +1,6 @@
 #ifndef param_estimator_
 #define param_estimator_
 
-#include <vector>
-
-using std::vector;
-
 namespace open3DCV
 {
 /**
@@ -22,11 +18,11 @@ public:
     
     Param_Estimator(unsigned int ndata_min, unsigned int nparam) : ndata_min_(ndata_min), nparam_(nparam) { }
     
-    virtual void estimate(vector<T>& data, vector<S>& params) = 0;
+    virtual void estimate(std::vector<T>& data, std::vector<S>& params) = 0;
     
-    virtual void ls_estimate(vector<T>& data, vector<S>& params) = 0;
+    virtual void ls_estimate(std::vector<T>& data, std::vector<S>& params) = 0;
     
-    virtual int check_inliers(T& data, vector<S>& params) = 0;
+    virtual int check_inliers(T& data, std::vector<S>& params) = 0;
     
     unsigned int ndata() const { return ndata_min_; }
     
