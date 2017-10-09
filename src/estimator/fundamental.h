@@ -20,7 +20,7 @@ namespace open3DCV
         
         void ls_estimate(std::vector<DMatch>& data, std::vector<float>& params);
         
-        int check_inliers(DMatch& data, std::vector<float>& params);
+        int check_inlier(DMatch& data, std::vector<float>& params);
 
     private:
         

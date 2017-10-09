@@ -22,7 +22,7 @@ sections: [
     ['inst', 'Installation'],
     ['doc', 'Documentation'],
     ['tut', 'Tutorial'],
-    ['ref', 'Reference'],
+    ['bib', 'Bibliography'],
     ['dev', 'Developers'],
     ['post', 'Posts']
 ]

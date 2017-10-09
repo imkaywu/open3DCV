@@ -9,7 +9,7 @@ namespace open3DCV
  * The class include three methods:
  *      1. estimate(): estimation of parameters using the minimum amount of data (exact estimation)
  *      2. ls_estimate(): estimation of parameters using overdetermined data to minimize a least squares cost function
- *      3. check_inliers(): check if the data is inlier or outlier
+ *      3. check_inlier(): check if the data is inlier or outlier
  */
 template<class T, class S>
 class Param_Estimator
@@ -22,7 +22,7 @@ public:
     
     virtual void ls_estimate(std::vector<T>& data, std::vector<S>& params) = 0;
     
-    virtual int check_inliers(T& data, std::vector<S>& params) = 0;
+    virtual int check_inlier(T& data, std::vector<S>& params) = 0;
     
     unsigned int ndata() const { return ndata_min_; }
     

@@ -67,7 +67,7 @@ void Fundamental_Estimator::ls_estimate(vector<DMatch>& data, vector<float>& par
     }
 }
 
-int Fundamental_Estimator::check_inliers(DMatch& data, vector<float>& params)
+int Fundamental_Estimator::check_inlier(DMatch& data, vector<float>& params)
 {
     Mat3f F;
     F << params[0], params[3], params[6],

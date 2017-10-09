@@ -104,7 +104,7 @@ float Ransac<T, S>::estimate(Param_Estimator<T, S>* param_estimator,
                 // ndata - j: number of data that have NOT been checked yet
                 for (j = 0; j < ndata && nvotes_best - nvotes_cur < ndata - j + 1; ++j)
                 {
-                    if (param_estimator->check_inliers(data[j], exact_est_params_cur))
+                    if (param_estimator->check_inlier(data[j], exact_est_params_cur))
                     {
                         vote_cur[j] = 1;
                         ++nvotes_cur;

@@ -7,7 +7,7 @@ order: 0
 
 This tutorial introduces all open3DCV related data types. 
 
-> This library is still under active development, thus the definitions may be constantly updated, this page may not be updated on time to reflect the latest versions.
+> This library is still under active development, thus the definitions may be constantly updated, this page may not be updated as constantly to reflect the latest versions.
 
 ### Overview
 * [Keypoint type](#keypoint_type)

@@ -34,7 +34,7 @@ void ls_estimate(std::vector<DMatch>& data, std::vector<float>& params);
 method that uses eight-point algorithm to estimate the least squares solution. This method is invoked at the end of RANSAC once the inliers have been detected.
 
 ```cpp
-int check_inliers(std::pair<DMatch>& data, std::vector<float>& params);
+int check_inlier(std::pair<DMatch>& data, std::vector<float>& params);
 ```
 method used to see if the data fits the estimated model.
 
