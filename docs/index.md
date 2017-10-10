@@ -17,7 +17,7 @@ open3DCV is a Multiple View Geometry library developed by [Kai Wu](https://imkay
 * robust estimation using RANSAC
 
 ### Implementation
-The implementation of various algorithms have been organized into a list of blog posts. Please visit the [vision tutorial](https://imkaywu.github.io/tutorials/vision/) page for more details.
+The implementation of various algorithms have been organized into a list of blog posts. Please visit the page of [open3DCV implementation tutorials](https://imkaywu.github.io/tutorials/open3dcv/) for more details.
 
 ### Download
 The source code and documentation are [available in Github](https://github.com/imkaywu/open3DCV/)
