@@ -16,19 +16,12 @@ namespace open3DCV
         DMatch (const DMatch& match) :
             ind_key_(match.ind_key_), point_(match.point_), dist_(match.dist_) {};
         
-        void update_match_pt(const std::vector<Keypoint>& key1, const std::vector<Keypoint>& key2);
         const float& dist() const;
         
         std::pair<int, int> ind_key_;
         std::pair<Vec2f, Vec2f> point_;
         float dist_;
     };
-    
-    inline void DMatch::update_match_pt(const std::vector<Keypoint>& key1, const std::vector<Keypoint>& key2)
-    {
-        point_.first = key1[ind_key_.first].coords();
-        point_.second = key2[ind_key_.second].coords();
-    }
     
     inline const float& DMatch::dist() const
     {
