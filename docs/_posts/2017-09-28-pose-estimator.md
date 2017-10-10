@@ -38,7 +38,7 @@ int check_inlier(std::pair<DMatch>& data, std::vector<float>& params);
 ```
 method used to see if the data fits the estimated model.
 
-### Relative pose from Essential matrix
+### Rigid pose from Essential matrix
 `Rt_from_E.h`
 
 This file implements the algorithm to estimate relative pose (rotation and translation) of two views from Essential matrix. This method is used extensively in two-view SfM to estimate relative pose of two viewpoints.
