@@ -20,12 +20,12 @@ using namespace open3DCV;
 
 int main(const int argc, const char** argv)
 {
-    string odir = "bust";
+    string odir = "templeRing";
     string idir = "/Users/BlacKay/Documents/Projects/Images/test/sfm/"+odir;
     bool is_vis = true;
     bool translate_image_coords = false;
     bool update_focal = false;
-    bool update_intrinsic = false;
+    bool update_intrinsics = false;
     bool read_from_file = true;
     const float thresh_bl_angle[2] = {2.0 / 180.0 * M_PI, 60.0 / 180.0f * M_PI};
     const float thresh_reproj0 = 1.5f;
@@ -199,13 +199,13 @@ int main(const int argc, const char** argv)
         std::cout << "reprojection error (BEFORE bundle adjustment): " << error << std::endl;
         
         // ------ bundle adjustment ------
-        cout << "------ start bundle adjustment ------" << endl;
+//        cout << "------ start bundle adjustment ------" << endl;
         Open3DCVBundleAdjustment(graph, BUNDLE_NO_INTRINSICS);
         if (update_focal)
             Open3DCVBundleAdjustment(graph, BUNDLE_FOCAL_LENGTH);
-        else if (update_intrinsic)
+        else if (update_intrinsics)
             Open3DCVBundleAdjustment(graph, BUNDLE_INTRINSICS);
-        cout << "------ end bundle adjustment ------" << endl;
+//        cout << "------ end bundle adjustment ------" << endl;
         error = reprojection_error(graph);
         std::cout << "reprojection error (AFTER bundle adjustment): " << error << std::endl;
         
@@ -264,13 +264,11 @@ int main(const int argc, const char** argv)
         std::cout << "reprojection error (BEFORE bundle adjustment): " << error << std::endl;
         
         // ------ N-view bundle adjustment ------
-        cout << "------ start bundle adjustment ------" << endl;
         Open3DCVBundleAdjustment(global_graph, BUNDLE_NO_INTRINSICS);
         if (update_focal)
             Open3DCVBundleAdjustment(global_graph, BUNDLE_FOCAL_LENGTH);
-        else if (update_intrinsic)
+        else if (update_intrinsics)
             Open3DCVBundleAdjustment(global_graph, BUNDLE_INTRINSICS);
-        cout << "------ end bundle adjustment ------" << endl;
         error = reprojection_error(global_graph);
         std::cout << "reprojection error (AFTER bundle adjustment): " << error << std::endl;
         
@@ -278,13 +276,11 @@ int main(const int argc, const char** argv)
         global_graph.rm_outliers(thresh_reproj1, thresh_angle);
         
         // ------ N-view bundle adjustment ------
-        cout << "------ start bundle adjustment ------" << endl;
         Open3DCVBundleAdjustment(global_graph, BUNDLE_NO_INTRINSICS);
         if (update_focal)
             Open3DCVBundleAdjustment(global_graph, BUNDLE_FOCAL_LENGTH);
-        else if (update_intrinsic)
+        else if (update_intrinsics)
             Open3DCVBundleAdjustment(global_graph, BUNDLE_INTRINSICS);
-        cout << "------ end bundle adjustment ------" << endl;
         error = reprojection_error(global_graph);
         std::cout << "reprojection error (AFTER bundle adjustment): " << error << std::endl;
         

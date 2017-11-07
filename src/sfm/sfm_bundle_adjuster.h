@@ -292,7 +292,7 @@ namespace open3DCV
         // solve
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
-        std::cout << summary.BriefReport() << std::endl;
+//        std::cout << summary.BriefReport() << std::endl;
         
         // copy intrinsics and extrinsics back
         unpack_camera_extrinsics(graph, extrinsics);
