@@ -180,7 +180,8 @@ unsigned int Ransac<T, S>::choose(unsigned int n, unsigned int m)
         numerator_begin = m + 1;
         denominator_end = n - m;
     }
-    
+    // can use accumulate, for instance,
+    // double product = accumulate(v.begin(), v.end(), double(1), multiplies<double>());
     for (i = numerator_begin, numerator = 1; i <= n; ++i)
         numerator *= i;
     for (i = 1, denominator = 1; i <= denominator_end; ++i)
