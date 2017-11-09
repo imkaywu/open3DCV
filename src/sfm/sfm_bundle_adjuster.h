@@ -7,7 +7,7 @@
 #include "transform/rodrigues.h"
 #include "sfm/graph.h"
 
-// This file is heavily adapted from `libmv_bundle_adjuster.cc`
+// This file is adapted from `libmv_bundle_adjuster.cc`
 namespace open3DCV
 {
     // camera intrinsics to be bundled
