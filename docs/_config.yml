@@ -40,6 +40,9 @@ highlighter: rouge
 # Enable mathjax
 mathjax: true
 
+# Google analytics
+google_analytics_id: UA-108804637-2
+
 # Since these are pages, it doesn't really matter
 future: true
 

@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+
+# Run this script to deploy the app to Github Pages.
+
+# Exit if any subcommand fails.
+set -e
+
+echo "Started building"
+
+# Checkout gh-pages branch.
+# if [ `git branch | grep gh-pages` ]
+# then
+#   git branch -D gh-pages
+# fi
+# git checkout -b gh-pages
+
+# Build site.
+JEKYLL_ENV=production jekyll build
+
+echo "Building successfully!"
+
+exit 0
