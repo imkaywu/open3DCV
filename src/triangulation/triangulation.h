@@ -2,7 +2,7 @@
 #define triangulation_h_
 
 #include <vector>
-#include "camera/camera.h"
+#include "camera/pinhole_camera.h"
 #include "sfm/track.h"
 #include "sfm/structure_point.h"
 #include "sfm/graph.h"
@@ -16,12 +16,12 @@ namespace open3DCV {
     void triangulate_linear(const vector<Mat34f>& poses, const vector<Vec2f>& pts, Vec3f& pt3d);
     void triangulate_linear(const vector<Mat34f>& poses, const vector<Keypoint>& keys, Vec3f& pt3d);
     void triangulate_linear(const vector<Mat34f>& poses, const Track& track, Structure_Point& struct_pts);
-//    void triangulate_linear(const vector<Camera>& cameras, Graph& graph);
+//    void triangulate_linear(const vector<PinholeCamera>& cameras, Graph& graph);
     
     // mid-point algorithm
     void triangulate_midpoint(const vector<Vec3f>& centers, const vector<Vec3f>& directions, const vector<Vec2f>& pts, Vec3f& pt3d);
-//    void triangulate_midpoint(const vector<Camera>& cameras, const vector<Keypoint>& keys, Vec3f& pt3d);
-//    void triangulate_midpoint(const vector<Camera>& cameras, const Track& track, Structure_Point& struct_pts);
+//    void triangulate_midpoint(const vector<PinholeCamera>& cameras, const vector<Keypoint>& keys, Vec3f& pt3d);
+//    void triangulate_midpoint(const vector<PinholeCamera>& cameras, const Track& track, Structure_Point& struct_pts);
     
     // minimizing the sampsen error
     void triangulate_nonlinear(Graph& graph);
@@ -35,7 +35,7 @@ namespace open3DCV {
     
     // angular triangulation
     void triangulate_angular(const vector<Mat34f>& poses, const vector<Vec2f>& pts, Vec3f& pt3d);
-//    void triangulate_angular(const vector<Camera>& cameras, const Track& track, Structure_Point& struct_pts);
+//    void triangulate_angular(const vector<PinholeCamera>& cameras, const Track& track, Structure_Point& struct_pts);
     
     // reprojection error
     float reprojection_error(const Graph& graph);
@@ -52,8 +52,8 @@ namespace open3DCV {
      * \param track The feature track for the 3D point
      * \return The 3D computed scene point
      */
-//    StructurePoint angular(const vector<Camera> &cameras, const FeatureTrack &track) const;
-//    Vector3d angular_gradient(const vector<Camera> &cameras, const FeatureTrack& track, const Vector3d &point) const;
+//    StructurePoint angular(const vector<PinholeCamera> &cameras, const FeatureTrack &track) const;
+//    Vector3d angular_gradient(const vector<PinholeCamera> &cameras, const FeatureTrack& track, const Vector3d &point) const;
 
 }
 

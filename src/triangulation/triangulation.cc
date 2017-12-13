@@ -1,7 +1,7 @@
 #include <cmath>
 #include <limits>
 #include "math/numeric.h"
-#include "camera/camera.h"
+#include "camera/pinhole_camera.h"
 #include "triangulation/triangulation.h"
 
 using std::isnan;
@@ -97,7 +97,7 @@ namespace open3DCV {
         pt3d = min_midpoint;
     }
     
-//    void triangulate_midpoint(const vector<Camera>& cameras, const vector<Keypoint>& keys, Vec3f& pt3d)
+//    void triangulate_midpoint(const vector<PinholeCamera>& cameras, const vector<Keypoint>& keys, Vec3f& pt3d)
 //    {
 //        int sz = static_cast<int>(keys.size());
 //        vector<Vec3f> centers(sz);
@@ -114,7 +114,7 @@ namespace open3DCV {
 //        triangulate_midpoint(centers, directs, pts, pt3d);
 //    }
 //    
-//    void triangulate_midpoint(const vector<Camera>& cameras, const Track& track, Structure_Point& structure_point)
+//    void triangulate_midpoint(const vector<PinholeCamera>& cameras, const Track& track, Structure_Point& structure_point)
 //    {
 //        int sz = static_cast<int>(track.size());
 //        vector<Vec3f> centers(sz);
@@ -304,7 +304,7 @@ namespace open3DCV {
     }
     
     // ---------------------------- Angular triangulation
-//    StructurePoint Triangulation::angular(const vector<Camera> &cameras,
+//    StructurePoint Triangulation::angular(const vector<PinholeCamera> &cameras,
 //      const FeatureTrack &track) const
 //    {
 //      double precision = 1e-25;
@@ -340,13 +340,13 @@ namespace open3DCV {
 //      return StructurePoint(x_new, point.color());
 //    }
 //
-//    Vector3d Triangulation::angular_gradient(const vector<Camera> &cameras,
+//    Vector3d Triangulation::angular_gradient(const vector<PinholeCamera> &cameras,
 //      const FeatureTrack &track, const Vector3d &point) const
 //    {
 //      Vector3d g = Vector3d(0,0,0);
 //      for(unsigned int i = 0; i < track.size(); ++i) {
 //        const Keypoint& f = track[i];
-//        const Camera& cam = cameras[f.index()];
+//        const PinholeCamera& cam = cameras[f.index()];
 //        Vector3d w = cam.direction(f.coords());
 //        Vector3d v = point - cam.position();
 //        double denom2 = v.dot(v);

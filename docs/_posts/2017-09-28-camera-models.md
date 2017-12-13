@@ -59,9 +59,3 @@ const Vec3f& center() const;
 Vec3f& center();
 ```
 return references to the center of projection.
-
-### Camera with distortion
-`class Camera_Distortion`
-
-#### Pinhole camera with distortion
-`class PinholeCamera_Distortion`
